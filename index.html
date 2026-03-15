@@ -137,7 +137,7 @@
           <div class="stat"><div class="small">Neon</div><div id="statNeon" class="n">0</div></div>
           <div class="stat"><div class="small">Terminals</div><div id="statTerminal" class="n">0</div></div>
         </div>
-        <div class="legend">Die Maps nutzen jetzt strukturierte Kacheln statt flacher Farbblöcke: Asphalt, Gehwege, Gitter, Kisten, Sicherheitskameras, Medbay- und Bar-Elemente wirken deutlich plastischer.</div>
+        <div class="legend">Die Architektur wirkt jetzt geschlossener: Wände verbinden sich optisch zu Räumen, Türen orientieren sich an Wandverläufen und Innenräume bekommen mehr Gebäudestruktur.</div>
       </aside>
 
       <main class="panel">
@@ -379,16 +379,52 @@
       mapGridEl.style.gridTemplateColumns = `repeat(${cols}, 36px)`;
       mapGridEl.innerHTML = '';
 
+      const same = (r, c, tile) => state.grid[r] && state.grid[r][c] === tile;
+
       state.grid.forEach((row, r) => row.forEach((tile, c) => {
         const data = TILESET[tile] || TILESET.empty;
         const cell = document.createElement('button');
         cell.className = 'tile';
         cell.style.background = data.texture;
+
+        if (tile === 'wall') {
+          const top = same(r - 1, c, 'wall');
+          const right = same(r, c + 1, 'wall');
+          const bottom = same(r + 1, c, 'wall');
+          const left = same(r, c - 1, 'wall');
+          let radius = '4px';
+          if (top && right && bottom && left) radius = '0';
+          else if (!top && !left) radius = '10px 0 0 0';
+          else if (!top && !right) radius = '0 10px 0 0';
+          else if (!bottom && !left) radius = '0 0 0 10px';
+          else if (!bottom && !right) radius = '0 0 10px 0';
+          cell.style.borderRadius = radius;
+          cell.style.boxShadow = 'inset 0 2px 0 rgba(255,255,255,.22), inset 0 -2px 0 rgba(0,0,0,.18), 0 0 0 1px rgba(255,255,255,.04)';
+        }
+
+        if (tile === 'door') {
+          const vertical = same(r - 1, c, 'wall') || same(r + 1, c, 'wall');
+          cell.style.background = vertical
+            ? 'linear-gradient(90deg,#78350f,#fb923c,#78350f)'
+            : 'linear-gradient(180deg,#78350f,#fb923c,#78350f)';
+          cell.style.boxShadow = 'inset 0 0 0 1px rgba(255,255,255,.08), inset 0 0 10px rgba(0,0,0,.25)';
+        }
+
+        if (tile === 'glass') {
+          cell.style.boxShadow = 'inset 0 0 0 1px rgba(255,255,255,.18), inset 0 0 12px rgba(34,211,238,.18)';
+        }
+
+        if (tile === 'room') {
+          const nearWall = same(r - 1, c, 'wall') || same(r + 1, c, 'wall') || same(r, c - 1, 'wall') || same(r, c + 1, 'wall');
+          if (nearWall) cell.style.boxShadow = 'inset 0 0 0 1px rgba(255,255,255,.03), inset 0 0 18px rgba(255,255,255,.04)';
+        }
+
         if (['neon','terminal','drone','spawn','ritual','turret'].includes(tile)) {
           cell.style.boxShadow = `0 0 10px ${data.hex}, inset 0 0 0 1px rgba(255,255,255,.08)`;
           cell.classList.add('glow');
         }
         if (tile === 'glass') cell.style.opacity = '.92';
+
         const sym = document.createElement('span');
         sym.className = 'sym';
         sym.textContent = data.symbol;
@@ -437,6 +473,8 @@
       ctx.fillStyle = 'rgba(248,250,252,.7)';
       ctx.fillText(`${themeEl.value} • ${scenarioEl.value}`, 16, 56);
 
+      const same = (r, c, tile) => state.grid[r] && state.grid[r][c] === tile;
+
       state.grid.forEach((row, r) => row.forEach((tile, c) => {
         const data = TILESET[tile] || TILESET.empty;
         const x = c * size;
@@ -450,10 +488,35 @@
         else if (tile === 'glass') { grad.addColorStop(0, 'rgba(255,255,255,.45)'); grad.addColorStop(1, '#22d3ee'); }
         else { grad.addColorStop(0, data.hex); grad.addColorStop(1, '#111827'); }
 
-        ctx.fillStyle = grad;
-        ctx.fillRect(x + 1, y + 1, size - 2, size - 2);
-        ctx.strokeStyle = 'rgba(255,255,255,.08)';
-        ctx.strokeRect(x + 1, y + 1, size - 2, size - 2);
+        if (tile === 'wall') {
+          ctx.fillStyle = grad;
+          ctx.fillRect(x + 1, y + 1, size - 2, size - 2);
+          ctx.strokeStyle = 'rgba(255,255,255,.12)';
+          ctx.strokeRect(x + 1, y + 1, size - 2, size - 2);
+          if (!same(r - 1, c, 'wall')) {
+            ctx.fillStyle = 'rgba(255,255,255,.18)';
+            ctx.fillRect(x + 1, y + 1, size - 2, 6);
+          }
+          if (!same(r + 1, c, 'wall')) {
+            ctx.fillStyle = 'rgba(0,0,0,.16)';
+            ctx.fillRect(x + 1, y + size - 7, size - 2, 6);
+          }
+        } else if (tile === 'door') {
+          const vertical = same(r - 1, c, 'wall') || same(r + 1, c, 'wall');
+          const dgrad = vertical ? ctx.createLinearGradient(x, y, x + size, y) : ctx.createLinearGradient(x, y, x, y + size);
+          dgrad.addColorStop(0, '#78350f');
+          dgrad.addColorStop(0.5, '#fb923c');
+          dgrad.addColorStop(1, '#78350f');
+          ctx.fillStyle = dgrad;
+          ctx.fillRect(x + 4, y + 4, size - 8, size - 8);
+          ctx.strokeStyle = 'rgba(255,255,255,.12)';
+          ctx.strokeRect(x + 4, y + 4, size - 8, size - 8);
+        } else {
+          ctx.fillStyle = grad;
+          ctx.fillRect(x + 1, y + 1, size - 2, size - 2);
+          ctx.strokeStyle = 'rgba(255,255,255,.08)';
+          ctx.strokeRect(x + 1, y + 1, size - 2, size - 2);
+        }
 
         if (['neon','terminal','drone','spawn'].includes(tile)) {
           ctx.shadowBlur = 16;
