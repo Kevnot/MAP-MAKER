@@ -102,6 +102,14 @@
           </select>
         </div>
         <div class="field">
+          <label for="promptInput">Map-Prompt</label>
+          <textarea id="promptInput" style="min-height:110px">Cyberpunk Nightclub mit VIP-Bereich, Fluchtroute, Serverraum und 2 Sicherheitskameras</textarea>
+        </div>
+        <div class="btns" style="margin-bottom:12px">
+          <button class="primary" id="promptGenerateBtn">Prompt → Map</button>
+          <button class="secondary" id="cityGenerateBtn">City Block</button>
+        </div>
+        <div class="field">
           <label for="scenario">Szenario</label>
           <select id="scenario">
             <option value="night-market">Night Market</option>
@@ -222,6 +230,7 @@
     const rowsEl = el('rows');
     const colsEl = el('cols');
     const notesEl = el('notes');
+    const promptInputEl = el('promptInput');
     const mapGridEl = el('mapGrid');
     const mapTitleEl = el('mapTitle');
     const jsonAreaEl = el('jsonArea');
@@ -240,14 +249,10 @@
     // --- City Generator ---
 function generateCity(rows, cols){
   const grid = makeGrid(rows, cols, 'alley');
-
-  // main roads
   const midR = Math.floor(rows/2);
   const midC = Math.floor(cols/2);
   for(let c=0;c<cols;c++) grid[midR][c]='road';
   for(let r=0;r<rows;r++) grid[r][midC]='road';
-
-  // sidewalks
   for(let c=0;c<cols;c++){
     if(midR+1<rows) grid[midR+1][c]='sidewalk';
     if(midR-1>=0) grid[midR-1][c]='sidewalk';
@@ -256,26 +261,144 @@ function generateCity(rows, cols){
     if(midC+1<cols) grid[r][midC+1]='sidewalk';
     if(midC-1>=0) grid[r][midC-1]='sidewalk';
   }
-
-  // buildings blocks
   addRect(grid,2,2,midR-3,midC-3,'room','wall');
   addRect(grid,2,midC+3,midR-3,cols-3,'room','wall');
   addRect(grid,midR+3,2,rows-3,midC-3,'room','wall');
   addRect(grid,midR+3,midC+3,rows-3,cols-3,'room','wall');
-
-  // doors
   grid[3][midC-4]='door';
   grid[3][midC+4]='door';
   grid[midR+4][3]='door';
   grid[midR+4][cols-4]='door';
-
-  // city props
   grid[midR+2][midC+2]='vehicle';
   grid[midR-2][midC-2]='vehicle';
   grid[midR-1][midC+3]='vending';
   grid[midR+1][midC-3]='crate';
   grid[midR][midC+4]='camera';
+  return grid;
+}
 
+function generateFromPrompt(prompt, rows, cols){
+  const text = (prompt || '').toLowerCase();
+  let scenario = 'night-market';
+  if(text.includes('labor') || text.includes('lab')) scenario = 'corp-lab';
+  if(text.includes('checkpoint') || text.includes('kontrolle') || text.includes('security')) scenario = 'checkpoint';
+  if(text.includes('garage') || text.includes('werkstatt')) scenario = 'garage';
+  if(text.includes('city') || text.includes('stadtblock') || text.includes('straßenblock')) return generateCity(rows, cols);
+
+  const grid = proceduralMap(rows, cols, scenario);
+
+  if(text.includes('nightclub') || text.includes('club') || text.includes('bar') || text.includes('vip')) {
+    const club = applyBuildingTemplateToGrid(grid, 'bar');
+    if(text.includes('vip')) {
+      const vipR = Math.max(3, Math.floor(rows/4));
+      const vipC1 = Math.max(3, Math.floor(cols/2));
+      const vipC2 = Math.min(cols-4, cols-3);
+      addRect(club, vipR, vipC1, vipR+2, vipC2, 'room', 'wall');
+      club[vipR+1][vipC1] = 'door';
+      club[vipR+1][vipC2-1] = 'neon';
+    }
+    if(text.includes('flucht') || text.includes('escape')) {
+      club[rows-3][Math.max(2, cols-4)] = 'door';
+      club[rows-2][Math.max(2, cols-4)] = 'spawn';
+    }
+    if(text.includes('server')) {
+      club[Math.max(4, Math.floor(rows/2))][Math.max(4, cols-5)] = 'terminal';
+      club[Math.max(5, Math.floor(rows/2)+1)][Math.max(4, cols-5)] = 'terminal';
+    }
+    if(text.includes('kamera')) {
+      club[3][3] = 'camera';
+      club[3][cols-4] = 'camera';
+    }
+    return club;
+  }
+
+  if(text.includes('serverraum')) {
+    const server = applyBuildingTemplateToGrid(grid, 'server');
+    if(text.includes('turret')) server[3][cols-4] = 'turret';
+    return server;
+  }
+
+  if(text.includes('medbay') || text.includes('klinik')) {
+    const lab = applyBuildingTemplateToGrid(grid, 'lab');
+    lab[Math.max(4, rows-5)][4] = 'medbay';
+    return lab;
+  }
+
+  if(text.includes('kameras') || text.includes('kamera')) {
+    grid[2][2] = 'camera';
+    grid[2][cols-3] = 'camera';
+  }
+  if(text.includes('sniper')) {
+    grid[1][Math.max(2, cols-3)] = 'spawn';
+    grid[2][Math.max(2, cols-3)] = 'cover';
+  }
+  if(text.includes('flucht') || text.includes('escape')) {
+    grid[rows-2][cols-2] = 'spawn';
+    grid[rows-3][cols-2] = 'door';
+  }
+  return grid;
+}
+
+function applyBuildingTemplateToGrid(baseGrid, template){
+  const grid = cloneGrid(baseGrid);
+  const rows = grid.length;
+  const cols = grid[0].length;
+  const midR = Math.floor(rows / 2);
+  const midC = Math.floor(cols / 2);
+
+  if (template === 'bar') {
+    addRect(grid, 2, 2, rows - 3, cols - 3, 'room', 'wall');
+    addRect(grid, midR - 1, 3, midR + 1, cols - 4, 'bar');
+    grid[rows - 3][midC] = 'door';
+    grid[4][4] = 'terminal';
+    grid[3][cols - 5] = 'neon';
+    grid[midR + 3][5] = 'spawn';
+    grid[midR + 3][cols - 6] = 'spawn';
+    grid[4][6] = 'vending';
+    grid[midR + 2][midC - 4] = 'crate';
+    grid[midR + 2][midC + 4] = 'crate';
+  }
+  if (template === 'lab') {
+    addRect(grid, 1, 1, rows - 2, cols - 2, 'room', 'wall');
+    addRect(grid, 3, 3, rows - 4, Math.floor(cols / 2), 'glass', 'wall');
+    addRect(grid, 3, Math.floor(cols / 2) + 1, rows - 4, cols - 4, 'room', 'wall');
+    grid[midR][Math.floor(cols / 2)] = 'door';
+    grid[4][4] = 'terminal';
+    grid[rows - 5][cols - 5] = 'terminal';
+    grid[midR][cols - 6] = 'hazard';
+    grid[midR - 2][cols - 7] = 'drone';
+    grid[rows - 3][midC] = 'spawn';
+    grid[rows - 5][5] = 'medbay';
+    grid[4][cols - 6] = 'camera';
+  }
+  if (template === 'server') {
+    addRect(grid, 2, 2, rows - 3, cols - 3, 'room', 'wall');
+    for (let r = 4; r < rows - 4; r += 2) {
+      grid[r][midC - 2] = 'terminal';
+      grid[r][midC] = 'terminal';
+      grid[r][midC + 2] = 'terminal';
+    }
+    grid[rows - 3][midC] = 'door';
+    grid[4][midC] = 'hazard';
+    grid[midR][4] = 'cover';
+    grid[midR][cols - 5] = 'cover';
+    grid[rows - 5][midC - 4] = 'spawn';
+    grid[4][4] = 'camera';
+    grid[4][cols - 5] = 'turret';
+  }
+  if (template === 'garage') {
+    addRect(grid, 2, 2, rows - 3, cols - 3, 'room', 'wall');
+    addRect(grid, 4, 4, rows - 5, cols - 5, 'alley');
+    grid[rows - 3][midC] = 'door';
+    grid[midR][midC - 3] = 'vehicle';
+    grid[midR][midC + 3] = 'vehicle';
+    grid[4][4] = 'terminal';
+    grid[4][cols - 5] = 'neon';
+    grid[midR + 2][5] = 'cover';
+    grid[midR + 2][cols - 6] = 'spawn';
+    grid[midR - 2][midC] = 'crate';
+    grid[3][3] = 'grate';
+  }
   return grid;
 }
 
@@ -338,64 +461,7 @@ function proceduralMap(rows, cols, scenario) {
       const rows = Number(rowsEl.value);
       const cols = Number(colsEl.value);
       const base = makeGrid(rows, cols, template === 'lab' || template === 'server' ? 'room' : 'alley');
-      const grid = cloneGrid(base);
-      const midR = Math.floor(rows / 2);
-      const midC = Math.floor(cols / 2);
-
-      if (template === 'bar') {
-        addRect(grid, 2, 2, rows - 3, cols - 3, 'room', 'wall');
-        addRect(grid, midR - 1, 3, midR + 1, cols - 4, 'bar');
-        grid[rows - 3][midC] = 'door';
-        grid[4][4] = 'terminal';
-        grid[3][cols - 5] = 'neon';
-        grid[midR + 3][5] = 'spawn';
-        grid[midR + 3][cols - 6] = 'spawn';
-        grid[4][6] = 'vending';
-        grid[midR + 2][midC - 4] = 'crate';
-        grid[midR + 2][midC + 4] = 'crate';
-      }
-      if (template === 'lab') {
-        addRect(grid, 1, 1, rows - 2, cols - 2, 'room', 'wall');
-        addRect(grid, 3, 3, rows - 4, Math.floor(cols / 2), 'glass', 'wall');
-        addRect(grid, 3, Math.floor(cols / 2) + 1, rows - 4, cols - 4, 'room', 'wall');
-        grid[midR][Math.floor(cols / 2)] = 'door';
-        grid[4][4] = 'terminal';
-        grid[rows - 5][cols - 5] = 'terminal';
-        grid[midR][cols - 6] = 'hazard';
-        grid[midR - 2][cols - 7] = 'drone';
-        grid[rows - 3][midC] = 'spawn';
-        grid[rows - 5][5] = 'medbay';
-        grid[4][cols - 6] = 'camera';
-      }
-      if (template === 'server') {
-        addRect(grid, 2, 2, rows - 3, cols - 3, 'room', 'wall');
-        for (let r = 4; r < rows - 4; r += 2) {
-          grid[r][midC - 2] = 'terminal';
-          grid[r][midC] = 'terminal';
-          grid[r][midC + 2] = 'terminal';
-        }
-        grid[rows - 3][midC] = 'door';
-        grid[4][midC] = 'hazard';
-        grid[midR][4] = 'cover';
-        grid[midR][cols - 5] = 'cover';
-        grid[rows - 5][midC - 4] = 'spawn';
-        grid[4][4] = 'camera';
-        grid[4][cols - 5] = 'turret';
-      }
-      if (template === 'garage') {
-        addRect(grid, 2, 2, rows - 3, cols - 3, 'room', 'wall');
-        addRect(grid, 4, 4, rows - 5, cols - 5, 'alley');
-        grid[rows - 3][midC] = 'door';
-        grid[midR][midC - 3] = 'vehicle';
-        grid[midR][midC + 3] = 'vehicle';
-        grid[4][4] = 'terminal';
-        grid[4][cols - 5] = 'neon';
-        grid[midR + 2][5] = 'cover';
-        grid[midR + 2][cols - 6] = 'spawn';
-        grid[midR - 2][midC] = 'crate';
-        grid[3][3] = 'grate';
-      }
-      state.grid = grid;
+      state.grid = applyBuildingTemplateToGrid(base, template);
       render();
     }
 
@@ -602,6 +668,19 @@ function proceduralMap(rows, cols, scenario) {
     }));
 
     el('generateBtn').onclick = () => { state.grid = proceduralMap(Number(rowsEl.value), Number(colsEl.value), scenarioEl.value); render(); };
+    el('promptGenerateBtn').onclick = () => {
+      const rows = Number(rowsEl.value);
+      const cols = Number(colsEl.value);
+      state.grid = generateFromPrompt(promptInputEl.value, rows, cols);
+      if ((promptInputEl.value || '').toLowerCase().includes('city') || (promptInputEl.value || '').toLowerCase().includes('stadt')) {
+        scenarioEl.value = 'night-market';
+      }
+      render();
+    };
+    el('cityGenerateBtn').onclick = () => {
+      state.grid = generateCity(Number(rowsEl.value), Number(colsEl.value));
+      render();
+    };
     el('clearBtn').onclick = () => { state.grid = makeGrid(Number(rowsEl.value), Number(colsEl.value), 'empty'); render(); };
     document.querySelectorAll('.building').forEach(btn => btn.onclick = () => applyBuildingTemplate(btn.dataset.building));
     el('pngBtn').onclick = exportPNG;
