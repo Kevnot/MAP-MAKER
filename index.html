@@ -1,732 +1,328 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NeonGrid Forge – index.html</title>
-  <style>
-    :root{
-      --bg:#020617;
-      --panel:#0f172a;
-      --panel2:#111827;
-      --border:#243041;
-      --text:#e5eefb;
-      --muted:#93a4bc;
-      --accent:#d946ef;
-      --accent2:#22d3ee;
-      --accent3:#10b981;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family:Arial,Helvetica,sans-serif;
-      color:var(--text);
-      background:radial-gradient(circle at top, rgba(217,70,239,.12), transparent 25%), linear-gradient(180deg,#020617,#0b1220 55%, #020617);
-    }
-    .wrap{max-width:1500px;margin:0 auto;padding:20px}
-    .hero,.panel{
-      background:rgba(15,23,42,.9);
-      border:1px solid var(--border);
-      border-radius:24px;
-      box-shadow:0 18px 50px rgba(0,0,0,.28);
-    }
-    .hero{padding:24px;margin-bottom:20px;position:relative;overflow:hidden}
-    .hero::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(217,70,239,.18),rgba(34,211,238,.12),rgba(16,185,129,.12));pointer-events:none}
-    .hero>*{position:relative}
-    .badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-    .badge{padding:6px 10px;border-radius:999px;border:1px solid var(--border);background:#111827;color:#dbe9ff;font-size:12px}
-    h1{margin:0 0 8px;font-size:40px}
-    p{margin:0;color:var(--muted)}
-    .grid{display:grid;grid-template-columns:320px minmax(0,1fr) 360px;gap:20px}
-    .panel{padding:16px}
-    .panel h2{margin:0 0 14px;font-size:20px}
-    .field{margin-bottom:12px}
-    .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
-    input,select,textarea,button{font:inherit}
-    input,select,textarea{width:100%;padding:10px 12px;border-radius:14px;border:1px solid var(--border);background:#0b1220;color:var(--text)}
-    textarea{min-height:180px;resize:vertical}
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    button{border:1px solid var(--border);background:#111827;color:var(--text);padding:10px 12px;border-radius:14px;cursor:pointer;transition:.18s transform,.18s border-color,.18s background}
-    button:hover{transform:translateY(-1px);border-color:#44556f}
-    button.primary{background:linear-gradient(90deg,var(--accent),#8b5cf6);border:none}
-    button.secondary{background:#172234}
-    .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
-    .stat{padding:12px;border-radius:18px;border:1px solid var(--border);background:#0b1220}
-    .stat .n{font-size:24px;font-weight:bold;margin-top:6px}
-    .mapwrap{overflow:auto;border-radius:18px;border:1px solid var(--border);background:radial-gradient(circle at top, rgba(34,211,238,.08), transparent 20%), linear-gradient(180deg,#111827,#020617);padding:16px}
-    .mapgrid{display:grid;gap:2px;width:max-content;margin:0 auto}
-    .tile{width:36px;height:36px;border:1px solid rgba(255,255,255,.04);border-radius:3px;display:flex;align-items:center;justify-content:center;color:rgba(248,250,252,.9);font-size:12px;cursor:pointer;user-select:none;position:relative;overflow:hidden;background-size:cover;background-position:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.02)}
-    .tile.glow{animation:tilePulse 2.1s ease-in-out infinite}
-    @keyframes tilePulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.18)}}
-    .tile::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg, rgba(255,255,255,.06), transparent 30%, rgba(0,0,0,.16));mix-blend-mode:screen;opacity:.35}
-    .tile .sym{display:none}
-    .tile .prop{position:absolute;inset:auto;z-index:2;pointer-events:none}
-    .tile .prop-small{width:12px;height:12px;border-radius:3px}
-    .tile .prop-wide{width:22px;height:10px;border-radius:3px}
-    .tile .prop-tall{width:10px;height:22px;border-radius:3px}
-    .tile[data-tile="road"]{background-image:linear-gradient(180deg,#495569,#2a3445),repeating-linear-gradient(90deg,rgba(255,255,255,.03) 0 2px,transparent 2px 8px)}
-    .tile[data-tile="road"]::before{content:"";position:absolute;left:4px;right:4px;top:16px;height:2px;background:repeating-linear-gradient(90deg,#d1d5db 0 9px, transparent 9px 16px);opacity:.45}
-    .tile[data-tile="sidewalk"]{background-image:linear-gradient(180deg,#acb6c5,#727e92),repeating-linear-gradient(90deg,rgba(255,255,255,.06) 0 1px,transparent 1px 18px),repeating-linear-gradient(0deg,rgba(0,0,0,.08) 0 1px,transparent 1px 18px)}
-    .tile[data-tile="room"]{background-image:linear-gradient(180deg,#74859f,#4d596d),repeating-linear-gradient(90deg,rgba(255,255,255,.03) 0 1px,transparent 1px 12px),repeating-linear-gradient(0deg,rgba(255,255,255,.02) 0 1px,transparent 1px 12px)}
-    .tile[data-tile="wall"]{background-image:linear-gradient(180deg,#e2e8f0,#94a3b8);box-shadow:inset 0 2px 0 rgba(255,255,255,.25), inset 0 -2px 0 rgba(0,0,0,.12)}
-    .tile[data-tile="glass"]{background-image:linear-gradient(135deg,rgba(255,255,255,.45),rgba(34,211,238,.65),rgba(8,145,178,.5));opacity:.95}
-    .tile[data-tile="alley"]{background-image:linear-gradient(180deg,#343840,#1f2127),radial-gradient(circle at 30% 20%,rgba(255,255,255,.05),transparent 20%),radial-gradient(circle at 70% 65%,rgba(255,255,255,.04),transparent 18%)}
-    .tile[data-tile="grate"]{background-image:repeating-linear-gradient(90deg,#64748b 0 2px,#334155 2px 5px),repeating-linear-gradient(0deg,rgba(255,255,255,.06) 0 1px, transparent 1px 6px)}
-    .tile[data-tile="hazard"]{background-image:repeating-linear-gradient(135deg,#f59e0b 0 8px,#6b3f00 8px 16px)}
-    .tile[data-tile="door"]{background-image:linear-gradient(180deg,#8b5a2b,#c9732e,#8b5a2b)}
-    .tile[data-tile="bar"]{background-image:linear-gradient(180deg,#c97c2a,#7a4115),repeating-linear-gradient(90deg,rgba(255,255,255,.06) 0 1px,transparent 1px 10px)}
-    .tools-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-    .tabbtn.active{outline:2px solid rgba(34,211,238,.5)}
-    .tab{display:none}
-    .tab.active{display:block}
-    .tile-list{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:420px;overflow:auto}
-    .tilepick{display:flex;align-items:center;gap:8px;justify-content:flex-start}
-    .swatch{width:24px;height:24px;border-radius:8px;border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center}
-    .small{font-size:12px;color:var(--muted)}
-    .legend{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.4}
-    @media (max-width: 1100px){.grid{grid-template-columns:1fr}}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>NeonGrid Forge</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#020617">
+
+<style>
+
+body{
+background:#020617;
+color:white;
+font-family:Arial;
+margin:0;
+}
+
+.container{
+display:grid;
+grid-template-columns:320px 1fr 260px;
+height:100vh;
+}
+
+.panel{
+padding:20px;
+background:#0f172a;
+overflow:auto;
+}
+
+.map{
+display:grid;
+place-items:center;
+background:#020617;
+}
+
+.grid{
+display:grid;
+gap:2px;
+background:#000;
+}
+
+.cell{
+width:40px;
+height:40px;
+background:#334155;
+cursor:pointer;
+}
+
+.button{
+background:#9333ea;
+padding:10px;
+border-radius:8px;
+margin-top:10px;
+cursor:pointer;
+text-align:center;
+}
+
+input,textarea,select{
+width:100%;
+margin-top:6px;
+margin-bottom:12px;
+padding:8px;
+background:#020617;
+border:1px solid #334155;
+color:white;
+border-radius:6px;
+}
+
+.tile{
+padding:8px;
+margin-bottom:6px;
+border-radius:6px;
+cursor:pointer;
+background:#1e293b;
+}
+
+.tile:hover{
+background:#334155;
+}
+
+</style>
 </head>
+
+
 <body>
-  <div class="wrap">
-    <section class="hero">
-      <div class="badges">
-        <span class="badge">Cyberpunk</span>
-        <span class="badge">Shadowrun</span>
-        <span class="badge">Sci‑Fi</span>
-        <span class="badge">GitHub-Ready index.html</span>
-      </div>
-      <h1>NeonGrid Forge</h1>
-      <p>Realistischer wirkende HTML/JS-Website für Cyberpunk-, Shadowrun- und Sci‑Fi-Maps mit Generator, Gebäudevorlagen, PNG-Export und JSON-Speichern.</p>
-    </section>
 
-    <section class="grid">
-      <aside class="panel">
-        <h2>Generator</h2>
-        <div class="field">
-          <label for="mapName">Map-Name</label>
-          <input id="mapName" value="Neon Extraction Zone" />
-        </div>
-        <div class="field">
-          <label for="theme">Theme</label>
-          <select id="theme">
-            <option value="cyberpunk">Cyberpunk</option>
-            <option value="shadowrun">Shadowrun</option>
-            <option value="scifi">Sci‑Fi</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="promptInput">Map-Prompt</label>
-          <textarea id="promptInput" style="min-height:110px">Cyberpunk Nightclub mit VIP-Bereich, Fluchtroute, Serverraum und 2 Sicherheitskameras</textarea>
-        </div>
-        <div class="btns" style="margin-bottom:12px">
-          <button class="primary" id="promptGenerateBtn">Prompt → Map</button>
-          <button class="secondary" id="cityGenerateBtn">City Block</button>
-        </div>
-        <div class="field">
-          <label for="scenario">Szenario</label>
-          <select id="scenario">
-            <option value="night-market">Night Market</option>
-            <option value="corp-lab">Konzernlabor</option>
-            <option value="checkpoint">Checkpoint</option>
-            <option value="garage">Neon Garage</option>
-          </select>
-        </div>
-        <div class="row">
-          <div class="field">
-            <label for="rows">Zeilen</label>
-            <input id="rows" type="number" min="8" max="40" value="14" />
-          </div>
-          <div class="field">
-            <label for="cols">Spalten</label>
-            <input id="cols" type="number" min="8" max="40" value="18" />
-          </div>
-        </div>
-        <div class="btns">
-          <button class="primary" id="generateBtn">Generieren</button>
-          <button class="secondary" id="clearBtn">Leeren</button>
-        </div>
-        <div class="field" style="margin-top:14px">
-          <label>Gebäude-Generator</label>
-          <div class="btns">
-            <button class="secondary building" data-building="bar">Cyber Bar</button>
-            <button class="secondary building" data-building="lab">Megacorp-Labor</button>
-            <button class="secondary building" data-building="server">Serverraum</button>
-            <button class="secondary building" data-building="garage">Werkstatt</button>
-          </div>
-        </div>
-        <div class="stats">
-          <div class="stat"><div class="small">Neon</div><div id="statNeon" class="n">0</div></div>
-          <div class="stat"><div class="small">Terminals</div><div id="statTerminal" class="n">0</div></div>
-        </div>
-        <div class="legend">Die Darstellung ist jetzt näher an richtigen Foundry-/Roll20-Battlemaps: weniger Symbol-Editor, mehr Topdown-Look mit Straßenmarkierungen, Props, Gebäudestruktur und echten Objektformen.</div>
-      </aside>
+<div class="container">
 
-      <main class="panel">
-        <h2 id="mapTitle">Neon Extraction Zone</h2>
-        <div class="mapwrap">
-          <div id="mapGrid" class="mapgrid"></div>
-        </div>
-      </main>
+<div class="panel">
 
-      <aside class="panel">
-        <h2>Werkzeuge & Export</h2>
-        <div class="tools-tabs">
-          <button class="tabbtn active" data-tab="tiles">Tiles</button>
-          <button class="tabbtn" data-tab="notes">Notizen</button>
-          <button class="tabbtn" data-tab="json">JSON</button>
-          <button class="tabbtn" data-tab="foundry">Foundry</button>
-        </div>
+<h2>Generator</h2>
 
-        <div id="tab-tiles" class="tab active">
-          <div id="tileList" class="tile-list"></div>
-        </div>
+<label>Theme</label>
+<select id="theme">
+<option>Cyberpunk</option>
+<option>Shadowrun</option>
+<option>SciFi</option>
+</select>
 
-        <div id="tab-notes" class="tab">
-          <div class="field">
-            <label for="notes">Notizen</label>
-            <textarea id="notes">Hook: Datendiebstahl im Nachtmarkt</textarea>
-          </div>
-          <button class="primary" id="pngBtn">PNG Export</button>
-        </div>
+<label>Map Prompt</label>
+<textarea id="prompt">Cyberpunk Nightclub mit VIP Bereich, Fluchtroute, Serverraum</textarea>
 
-        <div id="tab-json" class="tab">
-          <div class="btns" style="margin-bottom:10px">
-            <button id="jsonExportBtn">JSON Export</button>
-            <button id="jsonImportBtn">JSON Import</button>
-          </div>
-          <button class="secondary" id="jsonClearBtn" style="width:100%;margin-bottom:10px">Feld leeren</button>
-          <textarea id="jsonArea"></textarea>
-        </div>
+<div class="button" onclick="promptMap()">Prompt → Map</div>
+<div class="button" onclick="cityBlock()">City Block</div>
 
-        <div id="tab-foundry" class="tab">
-          <button id="foundryExportBtn" style="margin-bottom:10px;width:100%">Foundry Scene JSON</button>
-          <textarea id="foundryArea"></textarea>
-        </div>
-      </aside>
-    </section>
-  </div>
+<label>Zeilen</label>
+<input id="rows" value="14">
 
-  <canvas id="exportCanvas" style="display:none"></canvas>
+<label>Spalten</label>
+<input id="cols" value="18">
 
-  <script>
-    function svgDataUri(svg){ return `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`; }
-    const ASSETS = {
-      road: svgDataUri(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='#334155'/><rect y='8' width='64' height='48' fill='#3f4b5e'/><g stroke='#94a3b8' stroke-width='1' opacity='.18'><path d='M0 12h64M0 52h64'/></g><g stroke='#e5e7eb' stroke-width='2' opacity='.35'><path d='M8 32h10M26 32h10M44 32h10'/></g></svg>`),
-      sidewalk: svgDataUri(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='#8b95a7'/><g stroke='#cbd5e1' stroke-width='1' opacity='.28'><path d='M0 16h64M0 32h64M0 48h64M16 0v64M32 0v64M48 0v64'/></g></svg>`),
-      alley: svgDataUri(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='#27272a'/><g fill='#3f3f46' opacity='.5'><circle cx='14' cy='12' r='3'/><circle cx='42' cy='20' r='2'/><circle cx='26' cy='48' r='3'/><circle cx='52' cy='42' r='2'/></g></svg>`),
-      room: svgDataUri(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='#64748b'/><g stroke='#94a3b8' stroke-width='1' opacity='.25'><path d='M0 16h64M0 32h64M0 48h64M16 0v64M32 0v64M48 0v64'/></g></svg>`),
-      wall: svgDataUri(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#e2e8f0'/><stop offset='1' stop-color='#94a3b8'/></linearGradient></defs><rect width='64' height='64' fill='url(#g)'/><path d='M0 10h64' stroke='white' stroke-opacity='.35' stroke-width='5'/><path d='M0 58h64' stroke='black' stroke-opacity='.12' stroke-width='6'/></svg>`),
-      glass: svgDataUri(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='white' stop-opacity='.45'/><stop offset='.45' stop-color='#67e8f9' stop-opacity='.65'/><stop offset='1' stop-color='#0e7490' stop-opacity='.5'/></linearGradient></defs><rect width='64' height='64' fill='url(#g)'/><path d='M10 8l16 0M36 8l18 0' stroke='white' stroke-opacity='.45' stroke-width='3'/></svg>`),
-      hazard: svgDataUri(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='#f59e0b'/><g stroke='#6b3f00' stroke-width='8'><path d='M-8 64L64 -8M8 72L72 8'/></g></svg>`),
-      grate: svgDataUri(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='#334155'/><g stroke='#94a3b8' stroke-width='2' opacity='.45'><path d='M8 0v64M20 0v64M32 0v64M44 0v64M56 0v64M0 8h64M0 20h64M0 32h64M0 44h64M0 56h64'/></g></svg>`),
-      doorV: svgDataUri(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='0'><stop offset='0' stop-color='#78350f'/><stop offset='.5' stop-color='#fb923c'/><stop offset='1' stop-color='#78350f'/></linearGradient></defs><rect x='10' y='4' width='44' height='56' rx='4' fill='url(#g)'/><path d='M32 4v56' stroke='rgba(255,255,255,.25)'/></svg>`),
-      doorH: svgDataUri(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#78350f'/><stop offset='.5' stop-color='#fb923c'/><stop offset='1' stop-color='#78350f'/></linearGradient></defs><rect x='4' y='10' width='56' height='44' rx='4' fill='url(#g)'/><path d='M4 32h56' stroke='rgba(255,255,255,.25)'/></svg>`),
-      vehicle: svgDataUri(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='none'/><rect x='10' y='22' width='44' height='20' rx='6' fill='#ef4444'/><rect x='18' y='18' width='28' height='12' rx='4' fill='#fca5a5'/><circle cx='20' cy='44' r='5' fill='#111827'/><circle cx='44' cy='44' r='5' fill='#111827'/></svg>`),
-      crate: svgDataUri(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='14' y='14' width='36' height='36' rx='4' fill='#8b5a2b'/><path d='M14 26h36M26 14v36M38 14v36' stroke='rgba(255,255,255,.18)' stroke-width='2'/></svg>`),
-      terminal: svgDataUri(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='22' y='10' width='20' height='40' rx='3' fill='#10b981'/><rect x='26' y='14' width='12' height='16' fill='#a7f3d0'/><rect x='28' y='50' width='8' height='6' fill='#064e3b'/></svg>`),
-      camera: svgDataUri(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='26' r='10' fill='#cbd5e1'/><circle cx='32' cy='26' r='4' fill='#0f172a'/><rect x='28' y='36' width='8' height='10' fill='#64748b'/></svg>`),
-      vending: svgDataUri(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='20' y='8' width='24' height='48' rx='4' fill='#ec4899'/><rect x='24' y='14' width='16' height='18' fill='#fbcfe8'/><rect x='24' y='36' width='16' height='12' fill='#831843'/></svg>`),
-      turret: svgDataUri(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='34' r='10' fill='#f43f5e'/><rect x='28' y='16' width='8' height='12' fill='#9f1239'/><circle cx='32' cy='34' r='4' fill='white'/></svg>`),
-      medbay: svgDataUri(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='10' y='22' width='44' height='18' rx='4' fill='#06b6d4'/><rect x='18' y='18' width='10' height='8' fill='#a5f3fc'/><path d='M32 24v10M27 29h10' stroke='white' stroke-width='3'/></svg>`),
-      cover: svgDataUri(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='10' y='24' width='44' height='16' rx='4' fill='#6d28d9'/></svg>`),
-      neon: svgDataUri(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='32' r='10' fill='#d946ef'/><circle cx='32' cy='32' r='4' fill='white'/></svg>`),
-      spawn: svgDataUri(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><polygon points='32,10 48,20 48,44 32,54 16,44 16,20' fill='#84cc16'/><circle cx='32' cy='32' r='4' fill='white'/></svg>`),
-      bar: svgDataUri(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='8' y='24' width='48' height='14' rx='4' fill='#b45309'/></svg>`),
-      ritual: svgDataUri(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='32' r='12' fill='#a855f7'/><circle cx='32' cy='32' r='5' fill='white'/></svg>`)
-    };
-  </script>
+<div class="button" onclick="generate()">Generieren</div>
+<div class="button" onclick="clearMap()">Leeren</div>
 
-  <script>
-    const TILESET = {
-      empty:   { label: "Leer", symbol: "",  hex: "#0f172a", texture: "linear-gradient(180deg,#0b1322,#0f172a)" },
-      alley:   { label: "Gasse", symbol: "·", hex: "#27272a", texture: "linear-gradient(180deg,#2f3137,#1f2127), repeating-linear-gradient(90deg, rgba(255,255,255,.02) 0 3px, rgba(0,0,0,.02) 3px 6px)" },
-      road:    { label: "Straße", symbol: "═", hex: "#334155", texture: "linear-gradient(180deg,#3f4b5e,#253041), repeating-linear-gradient(90deg, rgba(255,255,255,.025) 0 2px, transparent 2px 8px)" },
-      wall:    { label: "Wand", symbol: "█", hex: "#cbd5e1", texture: "linear-gradient(180deg,#d7dee8,#94a3b8), repeating-linear-gradient(90deg, rgba(255,255,255,.22) 0 1px, rgba(0,0,0,.08) 1px 6px)" },
-      room:    { label: "Innenraum", symbol: "░", hex: "#64748b", texture: "linear-gradient(180deg,#73859e,#4e5b70), repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 1px, transparent 1px 12px), repeating-linear-gradient(0deg, rgba(255,255,255,.03) 0 1px, transparent 1px 12px)" },
-      glass:   { label: "Glas", symbol: "▦", hex: "#22d3ee", texture: "linear-gradient(135deg, rgba(34,211,238,.75), rgba(255,255,255,.15), rgba(34,211,238,.35))" },
-      neon:    { label: "Neon", symbol: "✦", hex: "#d946ef", texture: "radial-gradient(circle at center, rgba(255,255,255,.85), rgba(217,70,239,.85) 45%, rgba(78,10,108,.95))" },
-      terminal:{ label: "Terminal", symbol: "⌘", hex: "#10b981", texture: "linear-gradient(180deg,#29d39b,#0b8f67), repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 1px, transparent 1px 4px)" },
-      hazard:  { label: "Gefahr", symbol: "⚠", hex: "#f59e0b", texture: "repeating-linear-gradient(135deg,#f59e0b 0 8px,#6b3f00 8px 16px)" },
-      door:    { label: "Tür", symbol: "▣", hex: "#f97316", texture: "linear-gradient(180deg,#fb923c,#9a3412), repeating-linear-gradient(90deg, rgba(255,255,255,.08) 0 1px, transparent 1px 8px)" },
-      cover:   { label: "Deckung", symbol: "▤", hex: "#6d28d9", texture: "linear-gradient(180deg,#7c3aed,#3b0764), repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 2px, transparent 2px 6px)" },
-      drone:   { label: "Drohne", symbol: "◉", hex: "#0ea5e9", texture: "radial-gradient(circle at center, rgba(255,255,255,.8), rgba(14,165,233,.9) 50%, rgba(2,132,199,.95))" },
-      vehicle: { label: "Fahrzeug", symbol: "▰", hex: "#ef4444", texture: "linear-gradient(180deg,#ef4444,#7f1d1d), repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 2px, transparent 2px 10px)" },
-      spawn:   { label: "Spawn", symbol: "⬢", hex: "#84cc16", texture: "radial-gradient(circle at center, rgba(255,255,255,.82), rgba(132,204,22,.82) 45%, rgba(63,98,18,.95))" },
-      sidewalk:{ label: "Gehweg", symbol: "", hex: "#8b95a7", texture: "linear-gradient(180deg,#a3adbe,#6f7b8f), repeating-linear-gradient(90deg, rgba(255,255,255,.08) 0 1px, transparent 1px 18px), repeating-linear-gradient(0deg, rgba(0,0,0,.08) 0 1px, transparent 1px 18px)" },
-      grate:   { label: "Gitter", symbol: "#", hex: "#475569", texture: "repeating-linear-gradient(90deg,#64748b 0 2px,#334155 2px 5px), repeating-linear-gradient(0deg,rgba(255,255,255,.06) 0 1px, transparent 1px 6px)" },
-      crate:   { label: "Kiste", symbol: "▥", hex: "#8b5a2b", texture: "linear-gradient(180deg,#a16207,#6b3f16), repeating-linear-gradient(90deg, rgba(255,255,255,.08) 0 1px, transparent 1px 10px)" },
-      camera:  { label: "Kamera", symbol: "◔", hex: "#94a3b8", texture: "radial-gradient(circle at 40% 40%, rgba(255,255,255,.9), rgba(148,163,184,.75) 45%, rgba(51,65,85,.95))" },
-      vending: { label: "Vending", symbol: "▨", hex: "#ec4899", texture: "linear-gradient(180deg,#f472b6,#831843), repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 2px, transparent 2px 8px)" },
-      turret:  { label: "Turret", symbol: "✹", hex: "#f43f5e", texture: "radial-gradient(circle at center, rgba(255,255,255,.75), rgba(244,63,94,.85) 45%, rgba(76,5,25,.95))" },
-      ritual:  { label: "Ritual", symbol: "✧", hex: "#a855f7", texture: "radial-gradient(circle at center, rgba(255,255,255,.55), rgba(168,85,247,.7) 35%, rgba(59,7,100,.95))" },
-      medbay:  { label: "Medbay", symbol: "+", hex: "#06b6d4", texture: "linear-gradient(180deg,#67e8f9,#0e7490), repeating-linear-gradient(90deg, rgba(255,255,255,.08) 0 1px, transparent 1px 12px)" },
-      bar:     { label: "Theke", symbol: "≋", hex: "#b45309", texture: "linear-gradient(180deg,#d97706,#78350f), repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 1px, transparent 1px 10px)" }
-    };
+<div class="button" onclick="exportPNG()">PNG Export</div>
 
-    const state = { selectedTile: 'wall', grid: [] };
-    const el = (id) => document.getElementById(id);
-    const mapNameEl = el('mapName');
-    const themeEl = el('theme');
-    const scenarioEl = el('scenario');
-    const rowsEl = el('rows');
-    const colsEl = el('cols');
-    const notesEl = el('notes');
-    const promptInputEl = el('promptInput');
-    const mapGridEl = el('mapGrid');
-    const mapTitleEl = el('mapTitle');
-    const jsonAreaEl = el('jsonArea');
-    const foundryAreaEl = el('foundryArea');
+</div>
 
-    function makeGrid(rows, cols, fill = 'empty') { return Array.from({length: rows}, () => Array.from({length: cols}, () => fill)); }
-    function cloneGrid(grid){ return grid.map(r => [...r]); }
-    function rnd(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
-    function addRect(grid, r1, c1, r2, c2, fill, border = null) {
-      for (let r = r1; r <= r2; r++) for (let c = c1; c <= c2; c++) {
-        const isBorder = r === r1 || r === r2 || c === c1 || c === c2;
-        grid[r][c] = isBorder && border ? border : fill;
-      }
-    }
 
-    // --- City Generator ---
-function generateCity(rows, cols){
-  const grid = makeGrid(rows, cols, 'alley');
-  const midR = Math.floor(rows/2);
-  const midC = Math.floor(cols/2);
-  for(let c=0;c<cols;c++) grid[midR][c]='road';
-  for(let r=0;r<rows;r++) grid[r][midC]='road';
-  for(let c=0;c<cols;c++){
-    if(midR+1<rows) grid[midR+1][c]='sidewalk';
-    if(midR-1>=0) grid[midR-1][c]='sidewalk';
-  }
-  for(let r=0;r<rows;r++){
-    if(midC+1<cols) grid[r][midC+1]='sidewalk';
-    if(midC-1>=0) grid[r][midC-1]='sidewalk';
-  }
-  addRect(grid,2,2,midR-3,midC-3,'room','wall');
-  addRect(grid,2,midC+3,midR-3,cols-3,'room','wall');
-  addRect(grid,midR+3,2,rows-3,midC-3,'room','wall');
-  addRect(grid,midR+3,midC+3,rows-3,cols-3,'room','wall');
-  grid[3][midC-4]='door';
-  grid[3][midC+4]='door';
-  grid[midR+4][3]='door';
-  grid[midR+4][cols-4]='door';
-  grid[midR+2][midC+2]='vehicle';
-  grid[midR-2][midC-2]='vehicle';
-  grid[midR-1][midC+3]='vending';
-  grid[midR+1][midC-3]='crate';
-  grid[midR][midC+4]='camera';
-  return grid;
+<div class="map">
+
+<div id="grid" class="grid"></div>
+
+</div>
+
+
+<div class="panel">
+
+<h2>Tiles</h2>
+
+<div class="tile" onclick="selectTile('road')">Straße</div>
+<div class="tile" onclick="selectTile('sidewalk')">Gehweg</div>
+<div class="tile" onclick="selectTile('room')">Innenraum</div>
+<div class="tile" onclick="selectTile('wall')">Wand</div>
+<div class="tile" onclick="selectTile('door')">Tür</div>
+<div class="tile" onclick="selectTile('terminal')">Terminal</div>
+<div class="tile" onclick="selectTile('crate')">Kiste</div>
+<div class="tile" onclick="selectTile('vehicle')">Fahrzeug</div>
+<div class="tile" onclick="selectTile('camera')">Kamera</div>
+
+</div>
+
+</div>
+
+<script>
+
+let selectedTile="road"
+let grid=[]
+
+function selectTile(t){
+selectedTile=t
 }
 
-function generateFromPrompt(prompt, rows, cols){
-  const text = (prompt || '').toLowerCase();
-  let scenario = 'night-market';
-  if(text.includes('labor') || text.includes('lab')) scenario = 'corp-lab';
-  if(text.includes('checkpoint') || text.includes('kontrolle') || text.includes('security')) scenario = 'checkpoint';
-  if(text.includes('garage') || text.includes('werkstatt')) scenario = 'garage';
-  if(text.includes('city') || text.includes('stadtblock') || text.includes('straßenblock')) return generateCity(rows, cols);
+function generate(){
 
-  const grid = proceduralMap(rows, cols, scenario);
+let rows=parseInt(rowsInput().value)
+let cols=parseInt(colsInput().value)
 
-  if(text.includes('nightclub') || text.includes('club') || text.includes('bar') || text.includes('vip')) {
-    const club = applyBuildingTemplateToGrid(grid, 'bar');
-    if(text.includes('vip')) {
-      const vipR = Math.max(3, Math.floor(rows/4));
-      const vipC1 = Math.max(3, Math.floor(cols/2));
-      const vipC2 = Math.min(cols-4, cols-3);
-      addRect(club, vipR, vipC1, vipR+2, vipC2, 'room', 'wall');
-      club[vipR+1][vipC1] = 'door';
-      club[vipR+1][vipC2-1] = 'neon';
-    }
-    if(text.includes('flucht') || text.includes('escape')) {
-      club[rows-3][Math.max(2, cols-4)] = 'door';
-      club[rows-2][Math.max(2, cols-4)] = 'spawn';
-    }
-    if(text.includes('server')) {
-      club[Math.max(4, Math.floor(rows/2))][Math.max(4, cols-5)] = 'terminal';
-      club[Math.max(5, Math.floor(rows/2)+1)][Math.max(4, cols-5)] = 'terminal';
-    }
-    if(text.includes('kamera')) {
-      club[3][3] = 'camera';
-      club[3][cols-4] = 'camera';
-    }
-    return club;
-  }
+grid=[]
+gridDiv().innerHTML=""
 
-  if(text.includes('serverraum')) {
-    const server = applyBuildingTemplateToGrid(grid, 'server');
-    if(text.includes('turret')) server[3][cols-4] = 'turret';
-    return server;
-  }
+gridDiv().style.gridTemplateColumns="repeat("+cols+",40px)"
 
-  if(text.includes('medbay') || text.includes('klinik')) {
-    const lab = applyBuildingTemplateToGrid(grid, 'lab');
-    lab[Math.max(4, rows-5)][4] = 'medbay';
-    return lab;
-  }
+for(let r=0;r<rows;r++){
 
-  if(text.includes('kameras') || text.includes('kamera')) {
-    grid[2][2] = 'camera';
-    grid[2][cols-3] = 'camera';
-  }
-  if(text.includes('sniper')) {
-    grid[1][Math.max(2, cols-3)] = 'spawn';
-    grid[2][Math.max(2, cols-3)] = 'cover';
-  }
-  if(text.includes('flucht') || text.includes('escape')) {
-    grid[rows-2][cols-2] = 'spawn';
-    grid[rows-3][cols-2] = 'door';
-  }
-  return grid;
+grid[r]=[]
+
+for(let c=0;c<cols;c++){
+
+grid[r][c]="room"
+
+let cell=document.createElement("div")
+cell.className="cell"
+
+cell.onclick=()=>{
+grid[r][c]=selectedTile
+drawCell(cell,selectedTile)
 }
 
-function applyBuildingTemplateToGrid(baseGrid, template){
-  const grid = cloneGrid(baseGrid);
-  const rows = grid.length;
-  const cols = grid[0].length;
-  const midR = Math.floor(rows / 2);
-  const midC = Math.floor(cols / 2);
+drawCell(cell,"room")
 
-  if (template === 'bar') {
-    addRect(grid, 2, 2, rows - 3, cols - 3, 'room', 'wall');
-    addRect(grid, midR - 1, 3, midR + 1, cols - 4, 'bar');
-    grid[rows - 3][midC] = 'door';
-    grid[4][4] = 'terminal';
-    grid[3][cols - 5] = 'neon';
-    grid[midR + 3][5] = 'spawn';
-    grid[midR + 3][cols - 6] = 'spawn';
-    grid[4][6] = 'vending';
-    grid[midR + 2][midC - 4] = 'crate';
-    grid[midR + 2][midC + 4] = 'crate';
-  }
-  if (template === 'lab') {
-    addRect(grid, 1, 1, rows - 2, cols - 2, 'room', 'wall');
-    addRect(grid, 3, 3, rows - 4, Math.floor(cols / 2), 'glass', 'wall');
-    addRect(grid, 3, Math.floor(cols / 2) + 1, rows - 4, cols - 4, 'room', 'wall');
-    grid[midR][Math.floor(cols / 2)] = 'door';
-    grid[4][4] = 'terminal';
-    grid[rows - 5][cols - 5] = 'terminal';
-    grid[midR][cols - 6] = 'hazard';
-    grid[midR - 2][cols - 7] = 'drone';
-    grid[rows - 3][midC] = 'spawn';
-    grid[rows - 5][5] = 'medbay';
-    grid[4][cols - 6] = 'camera';
-  }
-  if (template === 'server') {
-    addRect(grid, 2, 2, rows - 3, cols - 3, 'room', 'wall');
-    for (let r = 4; r < rows - 4; r += 2) {
-      grid[r][midC - 2] = 'terminal';
-      grid[r][midC] = 'terminal';
-      grid[r][midC + 2] = 'terminal';
-    }
-    grid[rows - 3][midC] = 'door';
-    grid[4][midC] = 'hazard';
-    grid[midR][4] = 'cover';
-    grid[midR][cols - 5] = 'cover';
-    grid[rows - 5][midC - 4] = 'spawn';
-    grid[4][4] = 'camera';
-    grid[4][cols - 5] = 'turret';
-  }
-  if (template === 'garage') {
-    addRect(grid, 2, 2, rows - 3, cols - 3, 'room', 'wall');
-    addRect(grid, 4, 4, rows - 5, cols - 5, 'alley');
-    grid[rows - 3][midC] = 'door';
-    grid[midR][midC - 3] = 'vehicle';
-    grid[midR][midC + 3] = 'vehicle';
-    grid[4][4] = 'terminal';
-    grid[4][cols - 5] = 'neon';
-    grid[midR + 2][5] = 'cover';
-    grid[midR + 2][cols - 6] = 'spawn';
-    grid[midR - 2][midC] = 'crate';
-    grid[3][3] = 'grate';
-  }
-  return grid;
+gridDiv().appendChild(cell)
+
 }
 
-// --- Standard procedural maps ---
-function proceduralMap(rows, cols, scenario) {
-      const grid = makeGrid(rows, cols, scenario === 'corp-lab' ? 'room' : 'alley');
-      if (scenario !== 'corp-lab') {
-        const roadRow = Math.floor(rows / 2);
-        for (let c = 0; c < cols; c++) grid[roadRow][c] = 'road';
-        if (rows > 10) for (let c = 0; c < cols; c++) grid[Math.max(roadRow-1,0)][c] = 'road';
-        for (let c = 0; c < cols; c++) {
-          if (c % 4 !== 0) {
-            if (roadRow + 1 < rows) grid[roadRow + 1][c] = 'sidewalk';
-            if (roadRow - 2 >= 0) grid[roadRow - 2][c] = 'sidewalk';
-          }
-        }
-      }
-      for (let i = 0; i < Math.max(6, Math.floor(cols / 2)); i++) {
-        const r = rnd(1, rows - 2);
-        const c = rnd(1, cols - 2);
-        grid[r][c] = ['neon', 'terminal', 'cover', 'vehicle', 'spawn', 'crate', 'camera'][rnd(0, 6)];
-      }
-      for (let i = 0; i < Math.max(3, Math.floor(cols / 5)); i++) {
-        const r = rnd(1, rows - 2);
-        const c = rnd(1, cols - 2);
-        if (grid[r][c] === 'alley') grid[r][c] = 'grate';
-      }
-      if (scenario === 'corp-lab') {
-        addRect(grid, 2, 2, rows - 3, cols - 3, 'room', 'wall');
-        addRect(grid, 4, 4, rows - 5, Math.floor(cols/2), 'glass', 'wall');
-        addRect(grid, 4, Math.floor(cols/2)+1, rows - 5, cols - 5, 'room', 'wall');
-        grid[Math.floor(rows/2)][Math.floor(cols/2)] = 'door';
-        grid[4][cols-5] = 'terminal';
-        grid[rows-5][cols-5] = 'hazard';
-        grid[rows-6][5] = 'medbay';
-        grid[5][5] = 'camera';
-      }
-      if (scenario === 'checkpoint') {
-        for (let r = 2; r < rows-2; r += 3) grid[r][Math.floor(cols/2)] = 'cover';
-        grid[Math.floor(rows/2)][Math.floor(cols/2)+1] = 'terminal';
-        grid[Math.floor(rows/2)-1][Math.floor(cols/2)-2] = 'camera';
-        grid[Math.floor(rows/2)+2][Math.floor(cols/2)+2] = 'turret';
-      }
-      if (scenario === 'night-market') {
-        for (let c = 2; c < cols-2; c += 4) {
-          grid[2][c] = 'vending';
-          if (3 < rows) grid[3][c] = 'crate';
-        }
-      }
-      if (scenario === 'garage') {
-        grid[Math.floor(rows/2)][Math.floor(cols/2)-2] = 'vehicle';
-        grid[Math.floor(rows/2)][Math.floor(cols/2)+2] = 'vehicle';
-        grid[3][3] = 'crate';
-        grid[3][cols-4] = 'terminal';
-      }
-      return grid;
-    }
+}
 
-    function applyBuildingTemplate(template) {
-      const rows = Number(rowsEl.value);
-      const cols = Number(colsEl.value);
-      const base = makeGrid(rows, cols, template === 'lab' || template === 'server' ? 'room' : 'alley');
-      state.grid = applyBuildingTemplateToGrid(base, template);
-      render();
-    }
+}
 
-    function getStats() {
-      const flat = state.grid.flat();
-      return { neon: flat.filter(t => t === 'neon').length, terminal: flat.filter(t => t === 'terminal').length };
-    }
+function drawCell(cell,type){
 
-    function renderTilePicker() {
-      const list = el('tileList'); list.innerHTML = '';
-      Object.entries(TILESET).forEach(([key, data]) => {
-        const btn = document.createElement('button');
-        btn.className = 'tilepick' + (state.selectedTile === key ? ' active' : '');
-        const preview = ASSETS[key] || ASSETS[data.preview] || '';
-        btn.innerHTML = `<span class="swatch" style="background-image:${preview || data.texture};background-size:cover;background-position:center;color:#fff">${data.symbol || ''}</span><span>${data.label}</span>`;
-        btn.onclick = () => { state.selectedTile = key; renderTilePicker(); };
-        list.appendChild(btn);
-      });
-    }
+let colors={
+road:"#374151",
+sidewalk:"#6b7280",
+room:"#64748b",
+wall:"#e2e8f0",
+door:"#d97706",
+terminal:"#10b981",
+crate:"#8b5a2b",
+vehicle:"#ef4444",
+camera:"#cbd5e1"
+}
 
-    function render() {
-      const rows = state.grid.length;
-      const cols = state.grid[0]?.length || 0;
-      mapTitleEl.textContent = mapNameEl.value;
-      mapGridEl.style.gridTemplateColumns = `repeat(${cols}, 36px)`;
-      mapGridEl.innerHTML = '';
+cell.style.background=colors[type]||"#334155"
 
-      const same = (r, c, tile) => state.grid[r] && state.grid[r][c] === tile;
-      const propForTile = (tile, doorVertical = false) => {
-        if (tile === 'road' || tile === 'sidewalk' || tile === 'alley' || tile === 'room' || tile === 'wall' || tile === 'glass' || tile === 'hazard' || tile === 'grate') return '';
-        if (tile === 'door') return `<div class="prop" style="inset:2px;background-image:${doorVertical ? ASSETS.doorV : ASSETS.doorH};background-size:cover;background-position:center"></div>`;
-        const asset = ASSETS[tile];
-        if (!asset) return '';
-        return `<div class="prop" style="inset:4px;background-image:${asset};background-size:contain;background-repeat:no-repeat;background-position:center"></div>`;
-      };
+}
 
-      state.grid.forEach((row, r) => row.forEach((tile, c) => {
-        const data = TILESET[tile] || TILESET.empty;
-        const cell = document.createElement('button');
-        cell.className = 'tile';
-        cell.dataset.tile = tile;
-        cell.style.backgroundImage = (ASSETS[tile] && ['road','sidewalk','alley','room','wall','glass','hazard','grate'].includes(tile)) ? ASSETS[tile] : data.texture;
+function promptMap(){
 
-        if (tile === 'wall') {
-          const top = same(r - 1, c, 'wall');
-          const right = same(r, c + 1, 'wall');
-          const bottom = same(r + 1, c, 'wall');
-          const left = same(r, c - 1, 'wall');
-          let radius = '2px';
-          if (top && right && bottom && left) radius = '0';
-          else if (!top && !left) radius = '10px 0 0 0';
-          else if (!top && !right) radius = '0 10px 0 0';
-          else if (!bottom && !left) radius = '0 0 0 10px';
-          else if (!bottom && !right) radius = '0 0 10px 0';
-          cell.style.borderRadius = radius;
-        }
+let text=document.getElementById("prompt").value.toLowerCase()
 
-        let doorVertical = false;
-        if (tile === 'door') {
-          doorVertical = same(r - 1, c, 'wall') || same(r + 1, c, 'wall');
-          cell.style.background = 'linear-gradient(180deg,rgba(0,0,0,.05),rgba(0,0,0,.1))';
-        }
+generate()
 
-        if (['neon','terminal','drone','spawn','ritual','turret'].includes(tile)) {
-          cell.style.boxShadow = `0 0 10px ${data.hex}, inset 0 0 0 1px rgba(255,255,255,.08)`;
-          cell.classList.add('glow');
-        }
-        if (tile === 'glass') cell.style.opacity = '.92';
+if(text.includes("nightclub")){
 
-        const sym = document.createElement('span');
-        sym.className = 'sym';
-        sym.textContent = data.symbol;
-        cell.appendChild(sym);
-        cell.insertAdjacentHTML('beforeend', propForTile(tile, doorVertical));
-        cell.title = data.label;
-        cell.onclick = () => { state.grid[r][c] = state.selectedTile; render(); };
-        mapGridEl.appendChild(cell);
-      }));
+for(let r=5;r<9;r++){
+for(let c=4;c<14;c++){
+setTile(r,c,"road")
+}
+}
 
-      const stats = getStats();
-      el('statNeon').textContent = stats.neon;
-      el('statTerminal').textContent = stats.terminal;
-      renderTilePicker();
-    }
+setTile(7,9,"terminal")
 
-    function exportMapData() {
-      return JSON.stringify({ name: mapNameEl.value, theme: themeEl.value, scenario: scenarioEl.value, rows: state.grid.length, cols: state.grid[0].length, notes: notesEl.value, grid: state.grid }, null, 2);
-    }
+}
 
-    function exportFoundryScene() {
-      return JSON.stringify({ name: mapNameEl.value, width: state.grid[0].length * 100, height: state.grid.length * 100, grid: { type: 1, size: 100, distance: 1, units: 'm' }, flags: { neongrid: { theme: themeEl.value, scenario: scenarioEl.value } }, walls: [], lights: [], notes: [], tokens: [] }, null, 2);
-    }
+if(text.includes("server")){
+setTile(3,3,"terminal")
+}
 
-    function exportPNG() {
-      const canvas = el('exportCanvas');
-      const ctx = canvas.getContext('2d');
-      const rows = state.grid.length;
-      const cols = state.grid[0].length;
-      const size = 52;
-      const header = 84;
-      canvas.width = cols * size;
-      canvas.height = rows * size + header;
+if(text.includes("kamera")){
+setTile(2,5,"camera")
+setTile(2,12,"camera")
+}
 
-      const bg = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-      bg.addColorStop(0, '#020617');
-      bg.addColorStop(1, '#111827');
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
 
-      ctx.fillStyle = 'rgba(217,70,239,.9)';
-      ctx.fillRect(0, 0, canvas.width, 6);
-      ctx.fillStyle = '#f8fafc';
-      ctx.font = 'bold 24px Arial';
-      ctx.fillText(mapNameEl.value, 16, 32);
-      ctx.font = '14px Arial';
-      ctx.fillStyle = 'rgba(248,250,252,.7)';
-      ctx.fillText(`${themeEl.value} • ${scenarioEl.value}`, 16, 56);
+function cityBlock(){
 
-      const same = (r, c, tile) => state.grid[r] && state.grid[r][c] === tile;
-      const images = {};
-      const getImg = (key) => {
-        if (!images[key]) { const im = new Image(); im.src = ASSETS[key]; images[key] = im; }
-        return images[key];
-      };
-      const drawProp = (tile, x, y, doorVertical = false) => {
-        const key = tile === 'door' ? (doorVertical ? 'doorV' : 'doorH') : tile;
-        if (!ASSETS[key] || ['road','sidewalk','alley','room','wall','glass','hazard','grate'].includes(tile)) return;
-        const im = getImg(key);
-        ctx.drawImage(im, x + 4, y + 4, 44, 44);
-      };
+generate()
 
-      state.grid.forEach((row, r) => row.forEach((tile, c) => {
-        const data = TILESET[tile] || TILESET.empty;
-        const x = c * size;
-        const y = r * size + header;
+let rows=grid.length
+let cols=grid[0].length
 
-        const grad = ctx.createLinearGradient(x, y, x + size, y + size);
-        if (tile === 'road') { grad.addColorStop(0, '#445166'); grad.addColorStop(1, '#253041'); }
-        else if (tile === 'alley') { grad.addColorStop(0, '#343840'); grad.addColorStop(1, '#1f2127'); }
-        else if (tile === 'wall') { grad.addColorStop(0, '#dde5ee'); grad.addColorStop(1, '#95a4b8'); }
-        else if (tile === 'room') { grad.addColorStop(0, '#73859e'); grad.addColorStop(1, '#4e5b70'); }
-        else if (tile === 'glass') { grad.addColorStop(0, 'rgba(255,255,255,.45)'); grad.addColorStop(1, '#22d3ee'); }
-        else if (tile === 'sidewalk') { grad.addColorStop(0, '#a3adbe'); grad.addColorStop(1, '#6f7b8f'); }
-        else { grad.addColorStop(0, data.hex); grad.addColorStop(1, '#111827'); }
+let midR=Math.floor(rows/2)
+let midC=Math.floor(cols/2)
 
-        ctx.fillStyle = grad;
-        ctx.fillRect(x + 1, y + 1, size - 2, size - 2);
-        ctx.strokeStyle = 'rgba(255,255,255,.08)';
-        ctx.strokeRect(x + 1, y + 1, size - 2, size - 2);
+for(let c=0;c<cols;c++)setTile(midR,c,"road")
+for(let r=0;r<rows;r++)setTile(r,midC,"road")
 
-        if (tile === 'road') {
-          ctx.fillStyle='rgba(255,255,255,.22)';
-          for(let i=8;i<size-8;i+=16) ctx.fillRect(x+i,y+25,8,2);
-        }
-        if (tile === 'wall') {
-          if (!same(r - 1, c, 'wall')) { ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(x + 1, y + 1, size - 2, 6); }
-          if (!same(r + 1, c, 'wall')) { ctx.fillStyle = 'rgba(0,0,0,.16)'; ctx.fillRect(x + 1, y + size - 7, size - 2, 6); }
-        }
-        if (tile === 'door') {
-          const vertical = same(r - 1, c, 'wall') || same(r + 1, c, 'wall');
-          const dgrad = vertical ? ctx.createLinearGradient(x, y, x + size, y) : ctx.createLinearGradient(x, y, x, y + size);
-          dgrad.addColorStop(0, '#78350f'); dgrad.addColorStop(0.5, '#fb923c'); dgrad.addColorStop(1, '#78350f');
-          ctx.fillStyle = dgrad; ctx.fillRect(x + 6, y + 6, size - 12, size - 12);
-        }
-        if (tile === 'hazard') {
-          ctx.strokeStyle = 'rgba(0,0,0,.35)';
-          for (let i = 0; i < size; i += 10) { ctx.beginPath(); ctx.moveTo(x + i, y + 1); ctx.lineTo(x + 1, y + i); ctx.stroke(); }
-        }
-        const doorVertical = tile === 'door' && (same(r - 1, c, 'wall') || same(r + 1, c, 'wall'));
-        drawProp(tile, x, y, doorVertical);
-      }));
+}
 
-      const a = document.createElement('a');
-      a.href = canvas.toDataURL('image/png');
-      a.download = mapNameEl.value.replace(/[^a-z0-9]/gi,'_') + '.png';
-      a.click();
-    }
+function setTile(r,c,type){
 
-    document.querySelectorAll('.tabbtn').forEach(btn => btn.addEventListener('click', () => {
-      document.querySelectorAll('.tabbtn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      btn.classList.add('active');
-      el('tab-' + btn.dataset.tab).classList.add('active');
-    }));
+grid[r][c]=type
 
-    el('generateBtn').onclick = () => { state.grid = proceduralMap(Number(rowsEl.value), Number(colsEl.value), scenarioEl.value); render(); };
-    el('promptGenerateBtn').onclick = () => {
-      const rows = Number(rowsEl.value);
-      const cols = Number(colsEl.value);
-      state.grid = generateFromPrompt(promptInputEl.value, rows, cols);
-      if ((promptInputEl.value || '').toLowerCase().includes('city') || (promptInputEl.value || '').toLowerCase().includes('stadt')) {
-        scenarioEl.value = 'night-market';
-      }
-      render();
-    };
-    el('cityGenerateBtn').onclick = () => {
-      state.grid = generateCity(Number(rowsEl.value), Number(colsEl.value));
-      render();
-    };
-    el('clearBtn').onclick = () => { state.grid = makeGrid(Number(rowsEl.value), Number(colsEl.value), 'empty'); render(); };
-    document.querySelectorAll('.building').forEach(btn => btn.onclick = () => applyBuildingTemplate(btn.dataset.building));
-    el('pngBtn').onclick = exportPNG;
-    el('jsonExportBtn').onclick = () => jsonAreaEl.value = exportMapData();
-    el('jsonImportBtn').onclick = () => {
-      try {
-        const parsed = JSON.parse(jsonAreaEl.value);
-        mapNameEl.value = parsed.name || mapNameEl.value;
-        themeEl.value = parsed.theme || themeEl.value;
-        scenarioEl.value = parsed.scenario || scenarioEl.value;
-        rowsEl.value = parsed.rows || rowsEl.value;
-        colsEl.value = parsed.cols || colsEl.value;
-        notesEl.value = parsed.notes || notesEl.value;
-        state.grid = parsed.grid;
-        render();
-      } catch { alert('Import Fehler'); }
-    };
-    el('jsonClearBtn').onclick = () => jsonAreaEl.value = '';
-    el('foundryExportBtn').onclick = () => foundryAreaEl.value = exportFoundryScene();
-    mapNameEl.oninput = () => mapTitleEl.textContent = mapNameEl.value;
+let index=r*grid[0].length+c
 
-    state.grid = proceduralMap(Number(rowsEl.value), Number(colsEl.value), scenarioEl.value);
-    render();
-  </script>
+drawCell(gridDiv().children[index],type)
+
+}
+
+function clearMap(){
+generate()
+}
+
+function exportPNG(){
+
+let canvas=document.createElement("canvas")
+
+let rows=grid.length
+let cols=grid[0].length
+
+canvas.width=cols*40
+canvas.height=rows*40
+
+let ctx=canvas.getContext("2d")
+
+for(let r=0;r<rows;r++){
+
+for(let c=0;c<cols;c++){
+
+let color={
+road:"#374151",
+sidewalk:"#6b7280",
+room:"#64748b",
+wall:"#e2e8f0",
+door:"#d97706",
+terminal:"#10b981",
+crate:"#8b5a2b",
+vehicle:"#ef4444",
+camera:"#cbd5e1"
+}[grid[r][c]]
+
+ctx.fillStyle=color
+ctx.fillRect(c*40,r*40,40,40)
+
+}
+
+}
+
+let link=document.createElement("a")
+link.download="map.png"
+link.href=canvas.toDataURL()
+link.click()
+
+}
+
+function gridDiv(){
+return document.getElementById("grid")
+}
+
+function rowsInput(){
+return document.getElementById("rows")
+}
+
+function colsInput(){
+return document.getElementById("cols")
+}
+
+generate()
+
+</script>
+
 </body>
 </html>
