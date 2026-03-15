@@ -56,11 +56,26 @@
     .stat .n{font-size:24px;font-weight:bold;margin-top:6px}
     .mapwrap{overflow:auto;border-radius:18px;border:1px solid var(--border);background:radial-gradient(circle at top, rgba(34,211,238,.08), transparent 20%), linear-gradient(180deg,#111827,#020617);padding:16px}
     .mapgrid{display:grid;gap:2px;width:max-content;margin:0 auto}
-    .tile{width:36px;height:36px;border:1px solid rgba(255,255,255,.06);border-radius:4px;display:flex;align-items:center;justify-content:center;color:rgba(248,250,252,.9);font-size:12px;cursor:pointer;user-select:none;position:relative;overflow:hidden;background-size:cover;background-position:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.03)}
+    .tile{width:36px;height:36px;border:1px solid rgba(255,255,255,.04);border-radius:3px;display:flex;align-items:center;justify-content:center;color:rgba(248,250,252,.9);font-size:12px;cursor:pointer;user-select:none;position:relative;overflow:hidden;background-size:cover;background-position:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.02)}
     .tile.glow{animation:tilePulse 2.1s ease-in-out infinite}
     @keyframes tilePulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.18)}}
-    .tile::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg, rgba(255,255,255,.08), transparent 35%, rgba(0,0,0,.18));mix-blend-mode:screen;opacity:.35}
-    .tile .sym{position:relative;z-index:2;text-shadow:0 0 10px rgba(0,0,0,.55)}
+    .tile::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg, rgba(255,255,255,.06), transparent 30%, rgba(0,0,0,.16));mix-blend-mode:screen;opacity:.35}
+    .tile .sym{display:none}
+    .tile .prop{position:absolute;inset:auto;z-index:2;pointer-events:none}
+    .tile .prop-small{width:12px;height:12px;border-radius:3px}
+    .tile .prop-wide{width:22px;height:10px;border-radius:3px}
+    .tile .prop-tall{width:10px;height:22px;border-radius:3px}
+    .tile[data-tile="road"]{background-image:linear-gradient(180deg,#495569,#2a3445),repeating-linear-gradient(90deg,rgba(255,255,255,.03) 0 2px,transparent 2px 8px)}
+    .tile[data-tile="road"]::before{content:"";position:absolute;left:4px;right:4px;top:16px;height:2px;background:repeating-linear-gradient(90deg,#d1d5db 0 9px, transparent 9px 16px);opacity:.45}
+    .tile[data-tile="sidewalk"]{background-image:linear-gradient(180deg,#acb6c5,#727e92),repeating-linear-gradient(90deg,rgba(255,255,255,.06) 0 1px,transparent 1px 18px),repeating-linear-gradient(0deg,rgba(0,0,0,.08) 0 1px,transparent 1px 18px)}
+    .tile[data-tile="room"]{background-image:linear-gradient(180deg,#74859f,#4d596d),repeating-linear-gradient(90deg,rgba(255,255,255,.03) 0 1px,transparent 1px 12px),repeating-linear-gradient(0deg,rgba(255,255,255,.02) 0 1px,transparent 1px 12px)}
+    .tile[data-tile="wall"]{background-image:linear-gradient(180deg,#e2e8f0,#94a3b8);box-shadow:inset 0 2px 0 rgba(255,255,255,.25), inset 0 -2px 0 rgba(0,0,0,.12)}
+    .tile[data-tile="glass"]{background-image:linear-gradient(135deg,rgba(255,255,255,.45),rgba(34,211,238,.65),rgba(8,145,178,.5));opacity:.95}
+    .tile[data-tile="alley"]{background-image:linear-gradient(180deg,#343840,#1f2127),radial-gradient(circle at 30% 20%,rgba(255,255,255,.05),transparent 20%),radial-gradient(circle at 70% 65%,rgba(255,255,255,.04),transparent 18%)}
+    .tile[data-tile="grate"]{background-image:repeating-linear-gradient(90deg,#64748b 0 2px,#334155 2px 5px),repeating-linear-gradient(0deg,rgba(255,255,255,.06) 0 1px, transparent 1px 6px)}
+    .tile[data-tile="hazard"]{background-image:repeating-linear-gradient(135deg,#f59e0b 0 8px,#6b3f00 8px 16px)}
+    .tile[data-tile="door"]{background-image:linear-gradient(180deg,#8b5a2b,#c9732e,#8b5a2b)}
+    .tile[data-tile="bar"]{background-image:linear-gradient(180deg,#c97c2a,#7a4115),repeating-linear-gradient(90deg,rgba(255,255,255,.06) 0 1px,transparent 1px 10px)}
     .tools-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
     .tabbtn.active{outline:2px solid rgba(34,211,238,.5)}
     .tab{display:none}
@@ -145,7 +160,7 @@
           <div class="stat"><div class="small">Neon</div><div id="statNeon" class="n">0</div></div>
           <div class="stat"><div class="small">Terminals</div><div id="statTerminal" class="n">0</div></div>
         </div>
-        <div class="legend">Die Architektur wirkt jetzt geschlossener: Wände verbinden sich optisch zu Räumen, Türen orientieren sich an Wandverläufen und Innenräume bekommen mehr Gebäudestruktur.</div>
+        <div class="legend">Die Darstellung ist jetzt näher an richtigen Foundry-/Roll20-Battlemaps: weniger Symbol-Editor, mehr Topdown-Look mit Straßenmarkierungen, Props, Gebäudestruktur und echten Objektformen.</div>
       </aside>
 
       <main class="panel">
@@ -489,11 +504,28 @@ function proceduralMap(rows, cols, scenario) {
       mapGridEl.innerHTML = '';
 
       const same = (r, c, tile) => state.grid[r] && state.grid[r][c] === tile;
+      const propForTile = (tile) => {
+        if (tile === 'terminal') return '<div class="prop prop-tall" style="background:linear-gradient(180deg,#34d399,#065f46);box-shadow:0 0 10px rgba(16,185,129,.45), inset 0 0 0 1px rgba(255,255,255,.12)"></div>';
+        if (tile === 'camera') return '<div class="prop prop-small" style="background:radial-gradient(circle at 35% 35%,#fff,#94a3b8 45%,#334155 80%);border-radius:999px"></div>';
+        if (tile === 'drone') return '<div class="prop prop-small" style="background:radial-gradient(circle at center,#fff,#38bdf8 45%,#075985 80%);border-radius:999px;box-shadow:0 0 10px rgba(14,165,233,.45)"></div>';
+        if (tile === 'spawn') return '<div class="prop prop-small" style="background:radial-gradient(circle at center,#fff,#84cc16 45%,#365314 80%);clip-path:polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%);box-shadow:0 0 10px rgba(132,204,22,.45)"></div>';
+        if (tile === 'crate') return '<div class="prop prop-small" style="background:linear-gradient(180deg,#a16207,#6b3f16);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)"></div>';
+        if (tile === 'vehicle') return '<div class="prop prop-wide" style="background:linear-gradient(180deg,#ef4444,#7f1d1d);border-radius:6px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)"></div>';
+        if (tile === 'vending') return '<div class="prop prop-tall" style="background:linear-gradient(180deg,#f472b6,#831843);box-shadow:0 0 10px rgba(236,72,153,.35), inset 0 0 0 1px rgba(255,255,255,.1)"></div>';
+        if (tile === 'turret') return '<div class="prop prop-small" style="background:radial-gradient(circle at center,#fff,#f43f5e 45%,#4c0519 80%);border-radius:999px;box-shadow:0 0 10px rgba(244,63,94,.45)"></div>';
+        if (tile === 'medbay') return '<div class="prop prop-wide" style="background:linear-gradient(180deg,#67e8f9,#0e7490);border-radius:4px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)"></div>';
+        if (tile === 'cover') return '<div class="prop prop-wide" style="background:linear-gradient(180deg,#7c3aed,#3b0764);border-radius:4px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)"></div>';
+        if (tile === 'neon') return '<div class="prop prop-small" style="background:radial-gradient(circle at center,#fff,#d946ef 45%,#4e0a6c 80%);border-radius:999px;box-shadow:0 0 12px rgba(217,70,239,.55)"></div>';
+        if (tile === 'ritual') return '<div class="prop prop-small" style="background:radial-gradient(circle at center,#fff,#a855f7 45%,#3b0764 80%);border-radius:999px;box-shadow:0 0 12px rgba(168,85,247,.5)"></div>';
+        if (tile === 'bar') return '<div class="prop prop-wide" style="background:linear-gradient(180deg,#d97706,#78350f);border-radius:3px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)"></div>';
+        return '';
+      };
 
       state.grid.forEach((row, r) => row.forEach((tile, c) => {
         const data = TILESET[tile] || TILESET.empty;
         const cell = document.createElement('button');
         cell.className = 'tile';
+        cell.dataset.tile = tile;
         cell.style.background = data.texture;
 
         if (tile === 'wall') {
@@ -501,31 +533,18 @@ function proceduralMap(rows, cols, scenario) {
           const right = same(r, c + 1, 'wall');
           const bottom = same(r + 1, c, 'wall');
           const left = same(r, c - 1, 'wall');
-          let radius = '4px';
+          let radius = '2px';
           if (top && right && bottom && left) radius = '0';
           else if (!top && !left) radius = '10px 0 0 0';
           else if (!top && !right) radius = '0 10px 0 0';
           else if (!bottom && !left) radius = '0 0 0 10px';
           else if (!bottom && !right) radius = '0 0 10px 0';
           cell.style.borderRadius = radius;
-          cell.style.boxShadow = 'inset 0 2px 0 rgba(255,255,255,.22), inset 0 -2px 0 rgba(0,0,0,.18), 0 0 0 1px rgba(255,255,255,.04)';
         }
 
         if (tile === 'door') {
           const vertical = same(r - 1, c, 'wall') || same(r + 1, c, 'wall');
-          cell.style.background = vertical
-            ? 'linear-gradient(90deg,#78350f,#fb923c,#78350f)'
-            : 'linear-gradient(180deg,#78350f,#fb923c,#78350f)';
-          cell.style.boxShadow = 'inset 0 0 0 1px rgba(255,255,255,.08), inset 0 0 10px rgba(0,0,0,.25)';
-        }
-
-        if (tile === 'glass') {
-          cell.style.boxShadow = 'inset 0 0 0 1px rgba(255,255,255,.18), inset 0 0 12px rgba(34,211,238,.18)';
-        }
-
-        if (tile === 'room') {
-          const nearWall = same(r - 1, c, 'wall') || same(r + 1, c, 'wall') || same(r, c - 1, 'wall') || same(r, c + 1, 'wall');
-          if (nearWall) cell.style.boxShadow = 'inset 0 0 0 1px rgba(255,255,255,.03), inset 0 0 18px rgba(255,255,255,.04)';
+          cell.style.background = vertical ? 'linear-gradient(90deg,#78350f,#fb923c,#78350f)' : 'linear-gradient(180deg,#78350f,#fb923c,#78350f)';
         }
 
         if (['neon','terminal','drone','spawn','ritual','turret'].includes(tile)) {
@@ -538,6 +557,7 @@ function proceduralMap(rows, cols, scenario) {
         sym.className = 'sym';
         sym.textContent = data.symbol;
         cell.appendChild(sym);
+        cell.insertAdjacentHTML('beforeend', propForTile(tile));
         cell.title = data.label;
         cell.onclick = () => { state.grid[r][c] = state.selectedTile; render(); };
         mapGridEl.appendChild(cell);
@@ -583,6 +603,19 @@ function proceduralMap(rows, cols, scenario) {
       ctx.fillText(`${themeEl.value} • ${scenarioEl.value}`, 16, 56);
 
       const same = (r, c, tile) => state.grid[r] && state.grid[r][c] === tile;
+      const drawProp = (tile, x, y) => {
+        if (tile === 'terminal') { ctx.fillStyle='#10b981'; ctx.shadowBlur=14; ctx.shadowColor='#10b981'; ctx.fillRect(x+20,y+10,12,30); ctx.shadowBlur=0; }
+        if (tile === 'camera') { ctx.fillStyle='#cbd5e1'; ctx.beginPath(); ctx.arc(x+26,y+18,7,0,Math.PI*2); ctx.fill(); }
+        if (tile === 'drone') { ctx.fillStyle='#38bdf8'; ctx.shadowBlur=14; ctx.shadowColor='#38bdf8'; ctx.beginPath(); ctx.arc(x+26,y+26,8,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0; }
+        if (tile === 'spawn') { ctx.fillStyle='#84cc16'; ctx.beginPath(); ctx.moveTo(x+26,y+10); ctx.lineTo(x+40,y+18); ctx.lineTo(x+40,y+34); ctx.lineTo(x+26,y+42); ctx.lineTo(x+12,y+34); ctx.lineTo(x+12,y+18); ctx.closePath(); ctx.fill(); }
+        if (tile === 'crate') { ctx.fillStyle='#8b5a2b'; ctx.fillRect(x+16,y+16,20,20); }
+        if (tile === 'vehicle') { ctx.fillStyle='#ef4444'; ctx.fillRect(x+10,y+18,32,16); }
+        if (tile === 'vending') { ctx.fillStyle='#ec4899'; ctx.fillRect(x+19,y+9,14,32); }
+        if (tile === 'turret') { ctx.fillStyle='#f43f5e'; ctx.beginPath(); ctx.arc(x+26,y+26,8,0,Math.PI*2); ctx.fill(); }
+        if (tile === 'medbay') { ctx.fillStyle='#06b6d4'; ctx.fillRect(x+10,y+20,32,12); }
+        if (tile === 'cover' || tile === 'bar') { ctx.fillStyle = tile==='cover' ? '#6d28d9' : '#b45309'; ctx.fillRect(x+10,y+20,32,10); }
+        if (tile === 'neon' || tile === 'ritual') { ctx.fillStyle = tile==='neon' ? '#d946ef' : '#a855f7'; ctx.shadowBlur=16; ctx.shadowColor=ctx.fillStyle; ctx.beginPath(); ctx.arc(x+26,y+26,8,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0; }
+      };
 
       state.grid.forEach((row, r) => row.forEach((tile, c) => {
         const data = TILESET[tile] || TILESET.empty;
@@ -595,63 +628,33 @@ function proceduralMap(rows, cols, scenario) {
         else if (tile === 'wall') { grad.addColorStop(0, '#dde5ee'); grad.addColorStop(1, '#95a4b8'); }
         else if (tile === 'room') { grad.addColorStop(0, '#73859e'); grad.addColorStop(1, '#4e5b70'); }
         else if (tile === 'glass') { grad.addColorStop(0, 'rgba(255,255,255,.45)'); grad.addColorStop(1, '#22d3ee'); }
+        else if (tile === 'sidewalk') { grad.addColorStop(0, '#a3adbe'); grad.addColorStop(1, '#6f7b8f'); }
         else { grad.addColorStop(0, data.hex); grad.addColorStop(1, '#111827'); }
 
+        ctx.fillStyle = grad;
+        ctx.fillRect(x + 1, y + 1, size - 2, size - 2);
+        ctx.strokeStyle = 'rgba(255,255,255,.08)';
+        ctx.strokeRect(x + 1, y + 1, size - 2, size - 2);
+
+        if (tile === 'road') {
+          ctx.fillStyle='rgba(255,255,255,.22)';
+          for(let i=8;i<size-8;i+=16) ctx.fillRect(x+i,y+25,8,2);
+        }
         if (tile === 'wall') {
-          ctx.fillStyle = grad;
-          ctx.fillRect(x + 1, y + 1, size - 2, size - 2);
-          ctx.strokeStyle = 'rgba(255,255,255,.12)';
-          ctx.strokeRect(x + 1, y + 1, size - 2, size - 2);
-          if (!same(r - 1, c, 'wall')) {
-            ctx.fillStyle = 'rgba(255,255,255,.18)';
-            ctx.fillRect(x + 1, y + 1, size - 2, 6);
-          }
-          if (!same(r + 1, c, 'wall')) {
-            ctx.fillStyle = 'rgba(0,0,0,.16)';
-            ctx.fillRect(x + 1, y + size - 7, size - 2, 6);
-          }
-        } else if (tile === 'door') {
+          if (!same(r - 1, c, 'wall')) { ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(x + 1, y + 1, size - 2, 6); }
+          if (!same(r + 1, c, 'wall')) { ctx.fillStyle = 'rgba(0,0,0,.16)'; ctx.fillRect(x + 1, y + size - 7, size - 2, 6); }
+        }
+        if (tile === 'door') {
           const vertical = same(r - 1, c, 'wall') || same(r + 1, c, 'wall');
           const dgrad = vertical ? ctx.createLinearGradient(x, y, x + size, y) : ctx.createLinearGradient(x, y, x, y + size);
-          dgrad.addColorStop(0, '#78350f');
-          dgrad.addColorStop(0.5, '#fb923c');
-          dgrad.addColorStop(1, '#78350f');
-          ctx.fillStyle = dgrad;
-          ctx.fillRect(x + 4, y + 4, size - 8, size - 8);
-          ctx.strokeStyle = 'rgba(255,255,255,.12)';
-          ctx.strokeRect(x + 4, y + 4, size - 8, size - 8);
-        } else {
-          ctx.fillStyle = grad;
-          ctx.fillRect(x + 1, y + 1, size - 2, size - 2);
-          ctx.strokeStyle = 'rgba(255,255,255,.08)';
-          ctx.strokeRect(x + 1, y + 1, size - 2, size - 2);
-        }
-
-        if (['neon','terminal','drone','spawn'].includes(tile)) {
-          ctx.shadowBlur = 16;
-          ctx.shadowColor = data.hex;
-          ctx.fillStyle = data.hex;
-          ctx.fillRect(x + 12, y + 12, size - 24, size - 24);
-          ctx.shadowBlur = 0;
+          dgrad.addColorStop(0, '#78350f'); dgrad.addColorStop(0.5, '#fb923c'); dgrad.addColorStop(1, '#78350f');
+          ctx.fillStyle = dgrad; ctx.fillRect(x + 6, y + 6, size - 12, size - 12);
         }
         if (tile === 'hazard') {
           ctx.strokeStyle = 'rgba(0,0,0,.35)';
-          for (let i = 0; i < size; i += 10) {
-            ctx.beginPath();
-            ctx.moveTo(x + i, y + 1);
-            ctx.lineTo(x + 1, y + i);
-            ctx.stroke();
-          }
+          for (let i = 0; i < size; i += 10) { ctx.beginPath(); ctx.moveTo(x + i, y + 1); ctx.lineTo(x + 1, y + i); ctx.stroke(); }
         }
-        if (data.symbol) {
-          ctx.fillStyle = '#f8fafc';
-          ctx.font = '18px Arial';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(data.symbol, x + size / 2, y + size / 2 + 1);
-          ctx.textAlign = 'start';
-          ctx.textBaseline = 'alphabetic';
-        }
+        drawProp(tile, x, y);
       }));
 
       const a = document.createElement('a');
