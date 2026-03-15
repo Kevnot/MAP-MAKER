@@ -1,328 +1,661 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>NeonGrid Forge</title>
-
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#020617">
-
-<style>
-
-body{
-background:#020617;
-color:white;
-font-family:Arial;
-margin:0;
-}
-
-.container{
-display:grid;
-grid-template-columns:320px 1fr 260px;
-height:100vh;
-}
-
-.panel{
-padding:20px;
-background:#0f172a;
-overflow:auto;
-}
-
-.map{
-display:grid;
-place-items:center;
-background:#020617;
-}
-
-.grid{
-display:grid;
-gap:2px;
-background:#000;
-}
-
-.cell{
-width:40px;
-height:40px;
-background:#334155;
-cursor:pointer;
-}
-
-.button{
-background:#9333ea;
-padding:10px;
-border-radius:8px;
-margin-top:10px;
-cursor:pointer;
-text-align:center;
-}
-
-input,textarea,select{
-width:100%;
-margin-top:6px;
-margin-bottom:12px;
-padding:8px;
-background:#020617;
-border:1px solid #334155;
-color:white;
-border-radius:6px;
-}
-
-.tile{
-padding:8px;
-margin-bottom:6px;
-border-radius:6px;
-cursor:pointer;
-background:#1e293b;
-}
-
-.tile:hover{
-background:#334155;
-}
-
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NeonGrid Forge – Cyberpunk Battlemaps Engine</title>
+  <style>
+    :root{
+      --bg:#040816;
+      --panel:#0d1428;
+      --panel2:#121c35;
+      --line:#22314d;
+      --text:#eef4ff;
+      --muted:#9bb0d0;
+      --accent:#c940ff;
+      --accent2:#31d7ff;
+      --accent3:#1dd39f;
+      --danger:#ff7a3c;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;height:100%;background:radial-gradient(circle at top, rgba(201,64,255,.12), transparent 22%),linear-gradient(180deg,#030712,#07111f 58%,#030712);color:var(--text);font-family:Inter,Arial,Helvetica,sans-serif}
+    .app{display:grid;grid-template-columns:360px minmax(0,1fr) 360px;gap:18px;padding:18px;max-width:1800px;margin:0 auto}
+    .panel{background:rgba(13,20,40,.92);border:1px solid var(--line);border-radius:24px;padding:18px;box-shadow:0 18px 50px rgba(0,0,0,.28)}
+    .hero{grid-column:1/-1;background:linear-gradient(135deg,rgba(201,64,255,.14),rgba(49,215,255,.08),rgba(29,211,159,.08));overflow:hidden;position:relative}
+    .hero::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at top right, rgba(255,255,255,.07), transparent 28%);pointer-events:none}
+    .hero h1{margin:0 0 6px;font-size:36px;letter-spacing:.01em}
+    .hero p{margin:0;color:var(--muted)}
+    .badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+    .badge{font-size:12px;padding:6px 10px;border-radius:999px;background:#10192f;border:1px solid var(--line);color:#dbe9ff}
+    h2{margin:0 0 14px;font-size:20px}
+    .field{margin-bottom:12px}
+    .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+    input,select,textarea,button{font:inherit}
+    input,select,textarea{width:100%;padding:11px 12px;background:#07101f;border:1px solid var(--line);color:var(--text);border-radius:14px}
+    textarea{resize:vertical;min-height:110px}
+    button{cursor:pointer;border:none;border-radius:14px;padding:11px 12px;background:#182540;color:var(--text);border:1px solid var(--line);transition:.18s transform,.18s opacity,.18s background}
+    button:hover{transform:translateY(-1px);background:#203050}
+    button.primary{background:linear-gradient(90deg,var(--accent),#8b5cf6);border:none}
+    button.cyan{background:linear-gradient(90deg,#1297b8,#2dd4ff);border:none}
+    button.green{background:linear-gradient(90deg,#0f9f79,#19c88e);border:none}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+    .stat{background:#08101e;border:1px solid var(--line);padding:12px;border-radius:18px}
+    .stat .k{font-size:12px;color:var(--muted)}
+    .stat .v{font-size:24px;font-weight:700;margin-top:4px}
+    .canvas-wrap{position:relative;border-radius:24px;overflow:auto;border:1px solid var(--line);background:#030812;min-height:900px}
+    canvas{display:block;margin:auto;image-rendering:auto}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+    .tabbtn.active{outline:2px solid rgba(49,215,255,.45)}
+    .tab{display:none}
+    .tab.active{display:block}
+    .picker{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:620px;overflow:auto;padding-right:2px}
+    .pick{display:flex;align-items:center;gap:10px;justify-content:flex-start;text-align:left}
+    .sw{width:32px;height:32px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:#111827;background-size:cover;background-position:center;flex:0 0 auto}
+    .hint{font-size:12px;color:var(--muted);line-height:1.45}
+    .mini{font-size:12px;color:var(--muted)}
+    @media (max-width:1450px){.app{grid-template-columns:340px minmax(0,1fr)}.right{grid-column:1/-1}}
+    @media (max-width:980px){.app{grid-template-columns:1fr}.canvas-wrap{min-height:600px}}
+  </style>
 </head>
-
-
 <body>
-
-<div class="container">
-
-<div class="panel">
-
-<h2>Generator</h2>
-
-<label>Theme</label>
-<select id="theme">
-<option>Cyberpunk</option>
-<option>Shadowrun</option>
-<option>SciFi</option>
-</select>
-
-<label>Map Prompt</label>
-<textarea id="prompt">Cyberpunk Nightclub mit VIP Bereich, Fluchtroute, Serverraum</textarea>
-
-<div class="button" onclick="promptMap()">Prompt → Map</div>
-<div class="button" onclick="cityBlock()">City Block</div>
-
-<label>Zeilen</label>
-<input id="rows" value="14">
-
-<label>Spalten</label>
-<input id="cols" value="18">
-
-<div class="button" onclick="generate()">Generieren</div>
-<div class="button" onclick="clearMap()">Leeren</div>
-
-<div class="button" onclick="exportPNG()">PNG Export</div>
-
-</div>
-
-
-<div class="map">
-
-<div id="grid" class="grid"></div>
-
-</div>
-
-
-<div class="panel">
-
-<h2>Tiles</h2>
-
-<div class="tile" onclick="selectTile('road')">Straße</div>
-<div class="tile" onclick="selectTile('sidewalk')">Gehweg</div>
-<div class="tile" onclick="selectTile('room')">Innenraum</div>
-<div class="tile" onclick="selectTile('wall')">Wand</div>
-<div class="tile" onclick="selectTile('door')">Tür</div>
-<div class="tile" onclick="selectTile('terminal')">Terminal</div>
-<div class="tile" onclick="selectTile('crate')">Kiste</div>
-<div class="tile" onclick="selectTile('vehicle')">Fahrzeug</div>
-<div class="tile" onclick="selectTile('camera')">Kamera</div>
-
-</div>
-
-</div>
-
-<script>
-
-let selectedTile="road"
-let grid=[]
-
-function selectTile(t){
-selectedTile=t
-}
-
-function generate(){
-
-let rows=parseInt(rowsInput().value)
-let cols=parseInt(colsInput().value)
-
-grid=[]
-gridDiv().innerHTML=""
-
-gridDiv().style.gridTemplateColumns="repeat("+cols+",40px)"
-
-for(let r=0;r<rows;r++){
-
-grid[r]=[]
-
-for(let c=0;c<cols;c++){
-
-grid[r][c]="room"
-
-let cell=document.createElement("div")
-cell.className="cell"
-
-cell.onclick=()=>{
-grid[r][c]=selectedTile
-drawCell(cell,selectedTile)
-}
-
-drawCell(cell,"room")
-
-gridDiv().appendChild(cell)
-
-}
-
-}
-
-}
-
-function drawCell(cell,type){
-
-let colors={
-road:"#374151",
-sidewalk:"#6b7280",
-room:"#64748b",
-wall:"#e2e8f0",
-door:"#d97706",
-terminal:"#10b981",
-crate:"#8b5a2b",
-vehicle:"#ef4444",
-camera:"#cbd5e1"
-}
-
-cell.style.background=colors[type]||"#334155"
-
-}
-
-function promptMap(){
-
-let text=document.getElementById("prompt").value.toLowerCase()
-
-generate()
-
-if(text.includes("nightclub")){
-
-for(let r=5;r<9;r++){
-for(let c=4;c<14;c++){
-setTile(r,c,"road")
-}
-}
-
-setTile(7,9,"terminal")
-
-}
-
-if(text.includes("server")){
-setTile(3,3,"terminal")
-}
-
-if(text.includes("kamera")){
-setTile(2,5,"camera")
-setTile(2,12,"camera")
-}
-
-}
-
-function cityBlock(){
-
-generate()
-
-let rows=grid.length
-let cols=grid[0].length
-
-let midR=Math.floor(rows/2)
-let midC=Math.floor(cols/2)
-
-for(let c=0;c<cols;c++)setTile(midR,c,"road")
-for(let r=0;r<rows;r++)setTile(r,midC,"road")
-
-}
-
-function setTile(r,c,type){
-
-grid[r][c]=type
-
-let index=r*grid[0].length+c
-
-drawCell(gridDiv().children[index],type)
-
-}
-
-function clearMap(){
-generate()
-}
-
-function exportPNG(){
-
-let canvas=document.createElement("canvas")
-
-let rows=grid.length
-let cols=grid[0].length
-
-canvas.width=cols*40
-canvas.height=rows*40
-
-let ctx=canvas.getContext("2d")
-
-for(let r=0;r<rows;r++){
-
-for(let c=0;c<cols;c++){
-
-let color={
-road:"#374151",
-sidewalk:"#6b7280",
-room:"#64748b",
-wall:"#e2e8f0",
-door:"#d97706",
-terminal:"#10b981",
-crate:"#8b5a2b",
-vehicle:"#ef4444",
-camera:"#cbd5e1"
-}[grid[r][c]]
-
-ctx.fillStyle=color
-ctx.fillRect(c*40,r*40,40,40)
-
-}
-
-}
-
-let link=document.createElement("a")
-link.download="map.png"
-link.href=canvas.toDataURL()
-link.click()
-
-}
-
-function gridDiv(){
-return document.getElementById("grid")
-}
-
-function rowsInput(){
-return document.getElementById("rows")
-}
-
-function colsInput(){
-return document.getElementById("cols")
-}
-
-generate()
-
-</script>
-
+  <div class="app">
+    <section class="panel hero">
+      <div class="badges">
+        <span class="badge">Cyberpunk Battlemaps</span>
+        <span class="badge">Foundry / Roll20 Stil</span>
+        <span class="badge">Prompt → Map</span>
+        <span class="badge">PNG + JSON Export</span>
+      </div>
+      <h1>NeonGrid Forge</h1>
+      <p>Canvas-basierte Cyberpunk-/Shadowrun-Map-Engine mit Textur-Layern, Gebäudeblöcken, Props, Lichtkegeln und Prompt-Generator.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Generator</h2>
+      <div class="field">
+        <label for="mapName">Map-Name</label>
+        <input id="mapName" value="Midnight Extraction Block" />
+      </div>
+      <div class="field">
+        <label for="theme">Theme</label>
+        <select id="theme">
+          <option value="cyberpunk">Cyberpunk</option>
+          <option value="shadowrun">Shadowrun</option>
+          <option value="scifi">Sci‑Fi</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="promptInput">Prompt</label>
+        <textarea id="promptInput">Cyberpunk Stadtblock mit Nightclub, Serverraum, Dachzugang, zwei Kameras, Fluchtroute und geparktem Fahrzeug</textarea>
+      </div>
+      <div class="grid2">
+        <button class="primary" id="promptGenerateBtn">Prompt → Map</button>
+        <button class="cyan" id="cityGenerateBtn">City Block</button>
+      </div>
+      <div class="field" style="margin-top:12px">
+        <label for="scenario">Szenario</label>
+        <select id="scenario">
+          <option value="night-market">Night Market</option>
+          <option value="corp-lab">Konzernlabor</option>
+          <option value="checkpoint">Checkpoint</option>
+          <option value="garage">Neon Garage</option>
+          <option value="club">Nightclub</option>
+          <option value="city">City Block</option>
+        </select>
+      </div>
+      <div class="grid2">
+        <div class="field"><label for="cols">Spalten</label><input id="cols" type="number" min="10" max="40" value="16"></div>
+        <div class="field"><label for="rows">Zeilen</label><input id="rows" type="number" min="10" max="40" value="16"></div>
+      </div>
+      <div class="grid3">
+        <button class="green" id="generateBtn">Generieren</button>
+        <button id="clearBtn">Leeren</button>
+        <button id="gridToggleBtn">Grid an/aus</button>
+      </div>
+      <div class="field" style="margin-top:12px">
+        <label>Gebäude-Generator</label>
+        <div class="grid2">
+          <button class="building" data-building="bar">Cyber Bar</button>
+          <button class="building" data-building="lab">Megacorp-Labor</button>
+          <button class="building" data-building="server">Serverraum</button>
+          <button class="building" data-building="garage">Werkstatt</button>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="k">Props</div><div class="v" id="statProps">0</div></div>
+        <div class="stat"><div class="k">Lichter</div><div class="v" id="statLights">0</div></div>
+        <div class="stat"><div class="k">Gebäude</div><div class="v" id="statBuildings">0</div></div>
+      </div>
+      <p class="hint" style="margin-top:12px">Die Engine malt auf einem Canvas statt sichtbare Kästchen anzuzeigen. Böden, Wände, Props und Licht werden als Layer gezeichnet – näher am Stil echter VTT-Battlemaps.</p>
+    </section>
+
+    <section class="panel">
+      <h2 id="mapTitle">Midnight Extraction Block</h2>
+      <div class="canvas-wrap">
+        <canvas id="mapCanvas" width="1152" height="1152"></canvas>
+      </div>
+    </section>
+
+    <section class="panel right">
+      <h2>Werkzeuge & Export</h2>
+      <div class="tabs">
+        <button class="tabbtn active" data-tab="tiles">Tiles</button>
+        <button class="tabbtn" data-tab="props">Props</button>
+        <button class="tabbtn" data-tab="notes">Notizen</button>
+        <button class="tabbtn" data-tab="data">Export</button>
+      </div>
+
+      <div id="tab-tiles" class="tab active">
+        <div id="tilePicker" class="picker"></div>
+      </div>
+      <div id="tab-props" class="tab">
+        <div id="propPicker" class="picker"></div>
+      </div>
+      <div id="tab-notes" class="tab">
+        <div class="field"><label for="notes">Notizen</label><textarea id="notes">Ziel: Datendiebstahl. Fluchtpunkt im südlichen Innenhof. Kameraabdeckung auf Dachebene beachten.</textarea></div>
+        <p class="hint">Linke Auswahl: Boden/Tiles. Rechte Auswahl: Props/Objekte. Im Canvas klickst du zum Platzieren. Mit Rechtsklick löschst du Props.</p>
+      </div>
+      <div id="tab-data" class="tab">
+        <div class="grid2" style="margin-bottom:10px">
+          <button id="pngBtn" class="primary">PNG Export</button>
+          <button id="foundryBtn" class="cyan">Foundry JSON</button>
+        </div>
+        <div class="grid2" style="margin-bottom:10px">
+          <button id="jsonExportBtn">Map JSON Export</button>
+          <button id="jsonImportBtn">Map JSON Import</button>
+        </div>
+        <textarea id="dataArea" style="min-height:300px"></textarea>
+        <p class="mini" style="margin-top:10px">Foundry-Export enthält Grunddaten der Szene. Für echte Walls/Lights könntest du später auf Basis der Gebäudegrenzen automatische Wall-Daten ergänzen.</p>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const TILE_SIZE = 72;
+    const state = {
+      rows: 16,
+      cols: 16,
+      showGrid: true,
+      selectedMode: 'tile',
+      selectedTile: 'road',
+      selectedProp: 'vehicle',
+      base: [],
+      props: [],
+      lights: [],
+      buildings: []
+    };
+
+    const TILE_TYPES = {
+      road: { label:'Straße' },
+      sidewalk: { label:'Gehweg' },
+      alley: { label:'Gasse' },
+      room: { label:'Innenraum' },
+      wall: { label:'Wand' },
+      glass: { label:'Glas' },
+      hazard: { label:'Gefahr' },
+      grate: { label:'Gitter' },
+      door: { label:'Tür' },
+      bar: { label:'Theke' }
+    };
+
+    const PROP_TYPES = {
+      vehicle:{ label:'Fahrzeug', light:'#ff7a3c' },
+      crate:{ label:'Kiste' },
+      terminal:{ label:'Terminal', light:'#18d4a0' },
+      camera:{ label:'Kamera' },
+      vending:{ label:'Vending', light:'#ff4faf' },
+      turret:{ label:'Turret', light:'#ff5b7e' },
+      medbay:{ label:'Medbay', light:'#31d7ff' },
+      cover:{ label:'Deckung' },
+      neon:{ label:'Neon', light:'#d54cff' },
+      spawn:{ label:'Spawn', light:'#86d11e' },
+      ritual:{ label:'Ritual', light:'#a855f7' },
+      blood:{ label:'Blutspur' }
+    };
+
+    const el = (id) => document.getElementById(id);
+    const canvas = el('mapCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function makeGrid(rows, cols, fill='alley'){
+      return Array.from({length: rows}, () => Array.from({length: cols}, () => fill));
+    }
+
+    function resetState(rows, cols, fill='alley'){
+      state.rows = rows;
+      state.cols = cols;
+      state.base = makeGrid(rows, cols, fill);
+      state.props = [];
+      state.lights = [];
+      state.buildings = [];
+      resizeCanvas();
+    }
+
+    function resizeCanvas(){
+      canvas.width = state.cols * TILE_SIZE;
+      canvas.height = state.rows * TILE_SIZE;
+    }
+
+    function rnd(min, max){ return Math.floor(Math.random() * (max - min + 1)) + min; }
+    function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+    function inBounds(r,c){ return r>=0 && c>=0 && r<state.rows && c<state.cols; }
+    function setTile(r,c,t){ if(inBounds(r,c)) state.base[r][c]=t; }
+    function getTile(r,c){ return inBounds(r,c) ? state.base[r][c] : null; }
+
+    function addProp(r,c,type){
+      state.props = state.props.filter(p => !(p.r===r && p.c===c));
+      state.props.push({r,c,type});
+      const def = PROP_TYPES[type];
+      if(def && def.light) addLight(r,c,def.light,0.55,0.85);
+    }
+
+    function removeProp(r,c){
+      state.props = state.props.filter(p => !(p.r===r && p.c===c));
+      state.lights = state.lights.filter(l => !(l.r===r && l.c===c));
+    }
+
+    function addLight(r,c,color,intensity=0.45,size=0.8){
+      state.lights = state.lights.filter(l => !(l.r===r && l.c===c && l.color===color));
+      state.lights.push({r,c,color,intensity,size});
+    }
+
+    function countBuildings(){ return state.buildings.length; }
+
+    function fillRect(r1,c1,r2,c2,fill,border=null){
+      for(let r=r1;r<=r2;r++){
+        for(let c=c1;c<=c2;c++){
+          const isBorder = r===r1 || r===r2 || c===c1 || c===c2;
+          setTile(r,c,(isBorder && border) ? border : fill);
+        }
+      }
+    }
+
+    function carveDoor(r,c){ if(inBounds(r,c)) setTile(r,c,'door'); }
+
+    function addBuilding(meta){ state.buildings.push(meta); }
+
+    function generateCity(){
+      resetState(Number(el('rows').value), Number(el('cols').value), 'alley');
+      const mr = Math.floor(state.rows/2);
+      const mc = Math.floor(state.cols/2);
+      for(let c=0;c<state.cols;c++){ setTile(mr,c,'road'); if(mr-1>=0) setTile(mr-1,c,'road'); }
+      for(let r=0;r<state.rows;r++){ setTile(r,mc,'road'); if(mc-1>=0) setTile(r,mc-1,'road'); }
+      for(let c=0;c<state.cols;c++){ if(mr+1<state.rows) setTile(mr+1,c,'sidewalk'); if(mr-2>=0) setTile(mr-2,c,'sidewalk'); }
+      for(let r=0;r<state.rows;r++){ if(mc+1<state.cols) setTile(r,mc+1,'sidewalk'); if(mc-2>=0) setTile(r,mc-2,'sidewalk'); }
+
+      const blocks = [
+        {r1:1,c1:1,r2:mr-3,c2:mc-3,type:'club'},
+        {r1:1,c1:mc+2,r2:mr-3,c2:state.cols-2,type:'lab'},
+        {r1:mr+2,c1:1,r2:state.rows-2,c2:mc-3,type:'garage'},
+        {r1:mr+2,c1:mc+2,r2:state.rows-2,c2:state.cols-2,type:'server'}
+      ];
+
+      blocks.forEach((b,i)=>generateBuildingBlock(b.r1,b.c1,b.r2,b.c2,b.type,i));
+
+      addProp(mr+1, mc+1, 'vehicle');
+      addProp(mr-2, mc+2, 'vending');
+      addProp(mr+1, mc-3, 'crate');
+      addProp(mr-3, mc-1, 'camera');
+      render();
+    }
+
+    function generateBuildingBlock(r1,c1,r2,c2,type,index=0){
+      fillRect(r1,c1,r2,c2,'room','wall');
+      const w = c2-c1+1;
+      const h = r2-r1+1;
+      const cx = Math.floor((c1+c2)/2);
+      const cy = Math.floor((r1+r2)/2);
+      addBuilding({r1,c1,r2,c2,type});
+
+      if(type==='club'){
+        fillRect(cy-1,c1+1,cy+1,c2-1,'bar');
+        carveDoor(r2,cx);
+        addProp(r1+2,c1+2,'terminal');
+        addProp(r1+2,c2-2,'neon');
+        addProp(cy+2,c1+2,'crate');
+        addProp(cy+2,c2-2,'crate');
+        addLight(r1+2,c2-2,'#ff4faf',0.6,1);
+      }
+      if(type==='lab'){
+        fillRect(r1+2,c1+2,r2-2,Math.floor((c1+c2)/2),'glass','wall');
+        carveDoor(cy, Math.floor((c1+c2)/2));
+        addProp(r1+2,c1+2,'terminal');
+        addProp(r2-2,c2-2,'medbay');
+        addProp(r1+2,c2-2,'camera');
+        addProp(cy,c2-2,'turret');
+      }
+      if(type==='garage'){
+        fillRect(r1+2,c1+2,r2-2,c2-2,'alley');
+        carveDoor(r1,cx);
+        addProp(cy,cx-1,'vehicle');
+        addProp(cy,cx+1,'vehicle');
+        addProp(r1+2,c1+2,'crate');
+        addProp(r1+2,c2-2,'terminal');
+      }
+      if(type==='server'){
+        for(let r=r1+2;r<=r2-2;r+=2){
+          addProp(r,cx-1,'terminal');
+          addProp(r,cx+1,'terminal');
+        }
+        carveDoor(r1,cx);
+        addProp(r2-2,c1+2,'spawn');
+        addProp(r1+2,c2-2,'camera');
+        addProp(cy,c1+2,'cover');
+        addProp(cy,c2-2,'cover');
+      }
+      if(type==='checkpoint'){
+        carveDoor(r2,cx);
+        for(let r=r1+2;r<=r2-2;r+=2) addProp(r,cx,'cover');
+        addProp(cy,c2-2,'camera');
+        addProp(cy,c1+2,'terminal');
+      }
+    }
+
+    function proceduralMap(scenario){
+      resetState(Number(el('rows').value), Number(el('cols').value), scenario==='corp-lab' ? 'room' : 'alley');
+      const rows=state.rows, cols=state.cols;
+      const mr=Math.floor(rows/2), mc=Math.floor(cols/2);
+
+      if(scenario!=='corp-lab' && scenario!=='club'){
+        for(let c=0;c<cols;c++){ setTile(mr,c,'road'); if(mr-1>=0) setTile(mr-1,c,'road'); }
+        for(let c=0;c<cols;c++){ if(mr+1<rows) setTile(mr+1,c,'sidewalk'); if(mr-2>=0) setTile(mr-2,c,'sidewalk'); }
+      }
+
+      if(scenario==='corp-lab') generateBuildingBlock(1,1,rows-2,cols-2,'lab');
+      else if(scenario==='garage') generateBuildingBlock(2,2,rows-3,cols-3,'garage');
+      else if(scenario==='checkpoint') generateBuildingBlock(2,Math.floor(cols/3),rows-3,Math.floor(cols/3)*2,'checkpoint');
+      else if(scenario==='club') generateBuildingBlock(1,1,rows-2,cols-2,'club');
+      else {
+        for(let c=2;c<cols-2;c+=4){ addProp(2,c,'vending'); addProp(3,c,'crate'); }
+        addProp(rows-3, cols-3, 'spawn');
+        addProp(2, cols-3, 'camera');
+        addProp(rows-4, 2, 'vehicle');
+      }
+      render();
+    }
+
+    function generateFromPrompt(prompt){
+      const p = (prompt || '').toLowerCase();
+      if(p.includes('city') || p.includes('stadtblock') || p.includes('block')) return generateCity();
+      if(p.includes('nightclub') || p.includes('club') || p.includes('vip') || p.includes('bar')){
+        resetState(Number(el('rows').value), Number(el('cols').value), 'alley');
+        generateBuildingBlock(1,1,state.rows-2,state.cols-2,'club');
+        if(p.includes('vip')) fillRect(2, Math.floor(state.cols/2), 4, state.cols-3, 'room', 'wall'), carveDoor(3, Math.floor(state.cols/2));
+        if(p.includes('server')) addProp(Math.floor(state.rows/2), state.cols-3, 'terminal');
+        if(p.includes('kamera')) { addProp(2,2,'camera'); addProp(2,state.cols-3,'camera'); }
+        if(p.includes('flucht')) addProp(state.rows-2, state.cols-2, 'spawn');
+        render(); return;
+      }
+      if(p.includes('labor') || p.includes('lab')) return proceduralMap('corp-lab');
+      if(p.includes('checkpoint') || p.includes('security')) return proceduralMap('checkpoint');
+      if(p.includes('garage') || p.includes('werkstatt')) return proceduralMap('garage');
+      proceduralMap('night-market');
+      if(p.includes('sniper')) addProp(1, state.cols-2, 'spawn'), addProp(2, state.cols-2, 'cover');
+      if(p.includes('kamera')) { addProp(2,2,'camera'); addProp(2,state.cols-3,'camera'); }
+      if(p.includes('blood') || p.includes('blut')) addProp(Math.floor(state.rows/2)+1, Math.floor(state.cols/2), 'blood');
+      render();
+    }
+
+    function tilePreview(type){
+      const c = document.createElement('canvas'); c.width = 44; c.height = 44;
+      const x = c.getContext('2d');
+      drawBaseTile(x, type, 0, 0, 44, false);
+      return c.toDataURL('image/png');
+    }
+
+    function propPreview(type){
+      const c = document.createElement('canvas'); c.width = 44; c.height = 44;
+      const x = c.getContext('2d');
+      x.fillStyle='#18243d'; x.fillRect(0,0,44,44);
+      drawProp(x, type, 0, 0, 44);
+      return c.toDataURL('image/png');
+    }
+
+    function renderPickers(){
+      const tilePicker = el('tilePicker'); tilePicker.innerHTML='';
+      Object.entries(TILE_TYPES).forEach(([key,val])=>{
+        const b=document.createElement('button');
+        b.className='pick';
+        b.innerHTML=`<span class="sw" style="background-image:url('${tilePreview(key)}')"></span><span>${val.label}</span>`;
+        b.onclick=()=>{ state.selectedMode='tile'; state.selectedTile=key; };
+        tilePicker.appendChild(b);
+      });
+      const propPicker = el('propPicker'); propPicker.innerHTML='';
+      Object.entries(PROP_TYPES).forEach(([key,val])=>{
+        const b=document.createElement('button');
+        b.className='pick';
+        b.innerHTML=`<span class="sw" style="background-image:url('${propPreview(key)}')"></span><span>${val.label}</span>`;
+        b.onclick=()=>{ state.selectedMode='prop'; state.selectedProp=key; };
+        propPicker.appendChild(b);
+      });
+    }
+
+    function drawNoiseDots(ctx,x,y,size,count,alpha,color='#fff'){
+      ctx.save(); ctx.globalAlpha = alpha;
+      for(let i=0;i<count;i++){
+        const px = x + Math.random()*size, py = y + Math.random()*size;
+        ctx.fillStyle = color;
+        ctx.fillRect(px,py,1.2,1.2);
+      }
+      ctx.restore();
+    }
+
+    function drawBaseTile(ctx,tile,x,y,size,randomize=true){
+      const localRand = (seed) => {
+        const n = Math.sin(seed * 9999.91) * 43758.5453;
+        return n - Math.floor(n);
+      };
+      const seed = (x+1)*13.37 + (y+1)*7.11;
+      ctx.save();
+      if(tile==='road'){
+        const g=ctx.createLinearGradient(x,y,x,y+size); g.addColorStop(0,'#536078'); g.addColorStop(1,'#2a3445'); ctx.fillStyle=g; ctx.fillRect(x,y,size,size);
+        ctx.fillStyle='rgba(255,255,255,.07)'; ctx.fillRect(x,y,size,2);
+        ctx.fillStyle='rgba(255,255,255,.22)'; for(let i=8;i<size-8;i+=18) ctx.fillRect(x+i,y+size/2-1,10,2);
+        ctx.strokeStyle='rgba(255,255,255,.04)'; ctx.strokeRect(x+.5,y+.5,size-1,size-1);
+      } else if(tile==='sidewalk'){
+        const g=ctx.createLinearGradient(x,y,x,y+size); g.addColorStop(0,'#adb7c8'); g.addColorStop(1,'#717d91'); ctx.fillStyle=g; ctx.fillRect(x,y,size,size);
+        ctx.strokeStyle='rgba(255,255,255,.16)'; for(let i=18;i<size;i+=18) {ctx.beginPath();ctx.moveTo(x+i,y);ctx.lineTo(x+i,y+size);ctx.stroke();ctx.beginPath();ctx.moveTo(x,y+i);ctx.lineTo(x+size,y+i);ctx.stroke();}
+      } else if(tile==='alley'){
+        const g=ctx.createLinearGradient(x,y,x,y+size); g.addColorStop(0,'#343840'); g.addColorStop(1,'#1f2127'); ctx.fillStyle=g; ctx.fillRect(x,y,size,size);
+        drawNoiseDots(ctx,x,y,size,14,.12,'#d1d5db');
+      } else if(tile==='room'){
+        const g=ctx.createLinearGradient(x,y,x,y+size); g.addColorStop(0,'#7687a1'); g.addColorStop(1,'#4d596d'); ctx.fillStyle=g; ctx.fillRect(x,y,size,size);
+        ctx.strokeStyle='rgba(255,255,255,.06)'; for(let i=16;i<size;i+=16){ctx.beginPath();ctx.moveTo(x+i,y);ctx.lineTo(x+i,y+size);ctx.stroke();ctx.beginPath();ctx.moveTo(x,y+i);ctx.lineTo(x+size,y+i);ctx.stroke();}
+      } else if(tile==='wall'){
+        const g=ctx.createLinearGradient(x,y,x,y+size); g.addColorStop(0,'#edf2f8'); g.addColorStop(1,'#a3b1c3'); ctx.fillStyle=g; ctx.fillRect(x,y,size,size);
+        ctx.fillStyle='rgba(255,255,255,.22)'; ctx.fillRect(x,y,size,6);
+        ctx.fillStyle='rgba(0,0,0,.12)'; ctx.fillRect(x,y+size-6,size,6);
+      } else if(tile==='glass'){
+        const g=ctx.createLinearGradient(x,y,x+size,y+size); g.addColorStop(0,'rgba(255,255,255,.5)'); g.addColorStop(.4,'rgba(103,232,245,.65)'); g.addColorStop(1,'rgba(14,116,144,.45)'); ctx.fillStyle=g; ctx.fillRect(x,y,size,size);
+        ctx.strokeStyle='rgba(255,255,255,.25)'; ctx.beginPath(); ctx.moveTo(x+8,y+10); ctx.lineTo(x+size-10,y+8); ctx.stroke();
+      } else if(tile==='hazard'){
+        ctx.fillStyle='#f59e0b'; ctx.fillRect(x,y,size,size); ctx.strokeStyle='#6b3f00'; ctx.lineWidth=8; for(let i=-size;i<size*2;i+=16){ctx.beginPath();ctx.moveTo(x+i,y+size);ctx.lineTo(x+i+size,y);ctx.stroke();}
+      } else if(tile==='grate'){
+        ctx.fillStyle='#334155'; ctx.fillRect(x,y,size,size); ctx.strokeStyle='rgba(255,255,255,.34)'; for(let i=8;i<size;i+=12){ctx.beginPath();ctx.moveTo(x+i,y);ctx.lineTo(x+i,y+size);ctx.stroke();ctx.beginPath();ctx.moveTo(x,y+i);ctx.lineTo(x+size,y+i);ctx.stroke();}
+      } else if(tile==='door'){
+        const g=ctx.createLinearGradient(x,y,x,y+size); g.addColorStop(0,'#6b3f16'); g.addColorStop(.5,'#d97706'); g.addColorStop(1,'#6b3f16'); ctx.fillStyle=g; ctx.fillRect(x+8,y+8,size-16,size-16);
+      } else if(tile==='bar'){
+        const g=ctx.createLinearGradient(x,y,x,y+size); g.addColorStop(0,'#d97706'); g.addColorStop(1,'#78350f'); ctx.fillStyle=g; ctx.fillRect(x+6,y+size/2-8,size-12,16);
+      } else {
+        ctx.fillStyle='#111827'; ctx.fillRect(x,y,size,size);
+      }
+      if(randomize && tile!=='wall' && tile!=='glass' && tile!=='door') drawNoiseDots(ctx,x,y,size,6,.05);
+      ctx.restore();
+    }
+
+    function drawProp(ctx,type,x,y,size){
+      const cx=x+size/2, cy=y+size/2;
+      ctx.save();
+      if(type==='vehicle'){
+        ctx.fillStyle='#c73737'; roundRect(ctx,x+10,y+24,size-20,18,6,true); roundRect(ctx,x+18,y+18,size-36,12,4,true); ctx.fillStyle='#111827'; ctx.beginPath();ctx.arc(x+20,y+46,5,0,Math.PI*2);ctx.fill(); ctx.beginPath();ctx.arc(x+size-20,y+46,5,0,Math.PI*2);ctx.fill();
+      } else if(type==='crate'){
+        ctx.fillStyle='#8b5a2b'; roundRect(ctx,x+16,y+16,size-32,size-32,4,true); ctx.strokeStyle='rgba(255,255,255,.18)'; ctx.strokeRect(x+16,y+16,size-32,size-32); ctx.beginPath(); ctx.moveTo(x+size/2,y+16); ctx.lineTo(x+size/2,y+size-16); ctx.moveTo(x+16,y+size/2); ctx.lineTo(x+size-16,y+size/2); ctx.stroke();
+      } else if(type==='terminal'){
+        ctx.shadowBlur=14; ctx.shadowColor='#18d4a0'; ctx.fillStyle='#14b884'; roundRect(ctx,x+24,y+10,24,46,4,true); ctx.fillStyle='#b7f8df'; roundRect(ctx,x+28,y+14,16,18,2,true); ctx.shadowBlur=0;
+      } else if(type==='camera'){
+        ctx.fillStyle='#cbd5e1'; ctx.beginPath();ctx.arc(cx,cy-6,11,0,Math.PI*2);ctx.fill(); ctx.fillStyle='#334155'; ctx.beginPath();ctx.arc(cx,cy-6,5,0,Math.PI*2);ctx.fill(); ctx.fillStyle='#64748b'; ctx.fillRect(cx-4,cy+6,8,12);
+      } else if(type==='vending'){
+        ctx.shadowBlur=14; ctx.shadowColor='#ff4faf'; ctx.fillStyle='#ec4899'; roundRect(ctx,x+22,y+8,28,48,4,true); ctx.fillStyle='#fbcfe8'; ctx.fillRect(x+26,y+14,20,18); ctx.fillStyle='#831843'; ctx.fillRect(x+27,y+38,18,10); ctx.shadowBlur=0;
+      } else if(type==='turret'){
+        ctx.shadowBlur=12; ctx.shadowColor='#ff5b7e'; ctx.fillStyle='#f43f5e'; ctx.beginPath();ctx.arc(cx,cy+4,10,0,Math.PI*2);ctx.fill(); ctx.fillStyle='#9f1239'; roundRect(ctx,cx-4,y+14,8,14,2,true); ctx.fillStyle='white'; ctx.beginPath();ctx.arc(cx,cy+4,4,0,Math.PI*2);ctx.fill(); ctx.shadowBlur=0;
+      } else if(type==='medbay'){
+        ctx.fillStyle='#06b6d4'; roundRect(ctx,x+10,y+24,size-20,14,5,true); ctx.fillStyle='#a5f3fc'; roundRect(ctx,x+18,y+18,14,8,2,true); ctx.strokeStyle='white'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(cx, y+25); ctx.lineTo(cx, y+38); ctx.moveTo(cx-6,y+31.5); ctx.lineTo(cx+6,y+31.5); ctx.stroke();
+      } else if(type==='cover'){
+        ctx.fillStyle='#6d28d9'; roundRect(ctx,x+10,y+26,size-20,12,5,true);
+      } else if(type==='neon'){
+        ctx.shadowBlur=16; ctx.shadowColor='#d54cff'; ctx.fillStyle='#d54cff'; ctx.beginPath();ctx.arc(cx,cy,10,0,Math.PI*2);ctx.fill(); ctx.fillStyle='white'; ctx.beginPath();ctx.arc(cx,cy,4,0,Math.PI*2);ctx.fill(); ctx.shadowBlur=0;
+      } else if(type==='spawn'){
+        ctx.shadowBlur=12; ctx.shadowColor='#86d11e'; ctx.fillStyle='#86d11e'; ctx.beginPath(); ctx.moveTo(cx, y+10); ctx.lineTo(x+size-14, y+22); ctx.lineTo(x+size-14, y+size-22); ctx.lineTo(cx, y+size-10); ctx.lineTo(x+14, y+size-22); ctx.lineTo(x+14, y+22); ctx.closePath(); ctx.fill(); ctx.fillStyle='white'; ctx.beginPath();ctx.arc(cx,cy,4,0,Math.PI*2);ctx.fill(); ctx.shadowBlur=0;
+      } else if(type==='ritual'){
+        ctx.shadowBlur=14; ctx.shadowColor='#a855f7'; ctx.fillStyle='#a855f7'; ctx.beginPath();ctx.arc(cx,cy,12,0,Math.PI*2);ctx.fill(); ctx.strokeStyle='rgba(255,255,255,.25)'; ctx.lineWidth=2; ctx.beginPath();ctx.arc(cx,cy,5,0,Math.PI*2);ctx.stroke(); ctx.shadowBlur=0;
+      } else if(type==='blood'){
+        ctx.fillStyle='rgba(140,14,28,.7)'; ctx.beginPath();ctx.arc(cx-6,cy,9,0,Math.PI*2);ctx.arc(cx+4,cy+4,6,0,Math.PI*2);ctx.arc(cx+10,cy-4,4,0,Math.PI*2);ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function roundRect(ctx,x,y,w,h,r,fill=true){
+      ctx.beginPath();
+      ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+      if(fill) ctx.fill();
+    }
+
+    function drawLighting(){
+      ctx.save();
+      ctx.fillStyle='rgba(0,0,0,.42)';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      state.lights.forEach(l=>{
+        const cx = l.c*TILE_SIZE + TILE_SIZE/2;
+        const cy = l.r*TILE_SIZE + TILE_SIZE/2;
+        const radius = TILE_SIZE * (1.4 + l.size);
+        const g = ctx.createRadialGradient(cx,cy,6,cx,cy,radius);
+        g.addColorStop(0, hexToRgba(l.color, l.intensity));
+        g.addColorStop(.35, hexToRgba(l.color, l.intensity*.45));
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.globalCompositeOperation='screen';
+        ctx.fillStyle=g;
+        ctx.beginPath(); ctx.arc(cx,cy,radius,0,Math.PI*2); ctx.fill();
+      });
+      ctx.restore();
+    }
+
+    function hexToRgba(hex,a){
+      const h=hex.replace('#','');
+      const n=parseInt(h,16); const r=(n>>16)&255, g=(n>>8)&255, b=n&255;
+      return `rgba(${r},${g},${b},${a})`;
+    }
+
+    function drawGridOverlay(){
+      if(!state.showGrid) return;
+      ctx.save();
+      ctx.strokeStyle='rgba(255,255,255,.07)'; ctx.lineWidth=1;
+      for(let c=0;c<=state.cols;c++){ ctx.beginPath(); ctx.moveTo(c*TILE_SIZE+.5,0); ctx.lineTo(c*TILE_SIZE+.5,canvas.height); ctx.stroke(); }
+      for(let r=0;r<=state.rows;r++){ ctx.beginPath(); ctx.moveTo(0,r*TILE_SIZE+.5); ctx.lineTo(canvas.width,r*TILE_SIZE+.5); ctx.stroke(); }
+      ctx.restore();
+    }
+
+    function render(){
+      el('mapTitle').textContent = el('mapName').value;
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      for(let r=0;r<state.rows;r++){
+        for(let c=0;c<state.cols;c++) drawBaseTile(ctx, state.base[r][c], c*TILE_SIZE, r*TILE_SIZE, TILE_SIZE);
+      }
+      state.props.forEach(p=> drawProp(ctx,p.type,p.c*TILE_SIZE,p.r*TILE_SIZE,TILE_SIZE));
+      drawLighting();
+      drawGridOverlay();
+      el('statProps').textContent = state.props.length;
+      el('statLights').textContent = state.lights.length;
+      el('statBuildings').textContent = countBuildings();
+    }
+
+    canvas.addEventListener('click', (e)=>{
+      const rect = canvas.getBoundingClientRect();
+      const c = Math.floor((e.clientX - rect.left) * (canvas.width/rect.width) / TILE_SIZE);
+      const r = Math.floor((e.clientY - rect.top) * (canvas.height/rect.height) / TILE_SIZE);
+      if(!inBounds(r,c)) return;
+      if(state.selectedMode==='tile') setTile(r,c,state.selectedTile);
+      else addProp(r,c,state.selectedProp);
+      render();
+    });
+
+    canvas.addEventListener('contextmenu', (e)=>{
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const c = Math.floor((e.clientX - rect.left) * (canvas.width/rect.width) / TILE_SIZE);
+      const r = Math.floor((e.clientY - rect.top) * (canvas.height/rect.height) / TILE_SIZE);
+      removeProp(r,c); render();
+    });
+
+    el('generateBtn').onclick = ()=> proceduralMap(el('scenario').value);
+    el('clearBtn').onclick = ()=> { resetState(Number(el('rows').value), Number(el('cols').value), 'alley'); render(); };
+    el('gridToggleBtn').onclick = ()=> { state.showGrid=!state.showGrid; render(); };
+    el('promptGenerateBtn').onclick = ()=> generateFromPrompt(el('promptInput').value);
+    el('cityGenerateBtn').onclick = ()=> generateCity();
+    document.querySelectorAll('.building').forEach(btn => btn.onclick = ()=> { resetState(Number(el('rows').value), Number(el('cols').value), btn.dataset.building==='lab'||btn.dataset.building==='server' ? 'room':'alley'); generateBuildingBlock(1,1,state.rows-2,state.cols-2,btn.dataset.building); render(); });
+
+    document.querySelectorAll('.tabbtn').forEach(btn => btn.onclick = ()=>{
+      document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+      btn.classList.add('active');
+      el('tab-'+btn.dataset.tab).classList.add('active');
+    });
+
+    el('pngBtn').onclick = ()=>{
+      const a=document.createElement('a');
+      a.href=canvas.toDataURL('image/png');
+      a.download=(el('mapName').value || 'map').replace(/[^a-z0-9]+/gi,'_') + '.png';
+      a.click();
+    };
+
+    el('jsonExportBtn').onclick = ()=>{
+      el('dataArea').value = JSON.stringify({
+        name: el('mapName').value,
+        theme: el('theme').value,
+        scenario: el('scenario').value,
+        rows: state.rows,
+        cols: state.cols,
+        notes: el('notes').value,
+        showGrid: state.showGrid,
+        base: state.base,
+        props: state.props,
+        lights: state.lights,
+        buildings: state.buildings
+      }, null, 2);
+    };
+
+    el('jsonImportBtn').onclick = ()=>{
+      try{
+        const d = JSON.parse(el('dataArea').value);
+        el('mapName').value = d.name || el('mapName').value;
+        el('theme').value = d.theme || el('theme').value;
+        el('scenario').value = d.scenario || el('scenario').value;
+        el('notes').value = d.notes || el('notes').value;
+        state.rows = d.rows; state.cols = d.cols; state.showGrid = !!d.showGrid;
+        state.base = d.base; state.props = d.props || []; state.lights = d.lights || []; state.buildings = d.buildings || [];
+        el('rows').value = d.rows; el('cols').value = d.cols;
+        resizeCanvas(); render();
+      }catch(err){ alert('Import fehlgeschlagen'); }
+    };
+
+    el('foundryBtn').onclick = ()=>{
+      const scene = {
+        name: el('mapName').value,
+        width: canvas.width,
+        height: canvas.height,
+        grid: { type: 1, size: TILE_SIZE, distance: 1, units: 'm' },
+        flags: { neongrid: { theme: el('theme').value, scenario: el('scenario').value } },
+        notes: [],
+        lights: state.lights.map(l => ({ x: l.c*TILE_SIZE + TILE_SIZE/2, y: l.r*TILE_SIZE + TILE_SIZE/2, color: l.color, bright: TILE_SIZE*(0.7+l.size), dim: TILE_SIZE*(1.2+l.size) })),
+        walls: [],
+        drawings: []
+      };
+      el('dataArea').value = JSON.stringify(scene, null, 2);
+    };
+
+    renderPickers();
+    generateCity();
+  </script>
 </body>
 </html>
