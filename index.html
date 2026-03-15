@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeonGrid Forge</title>
+<style>
+body{margin:0;font-family:Arial;background:#020617;color:#e5eefb}
+.wrap{max-width:1400px;margin:auto;padding:20px}
+h1{margin:0 0 10px}
+.panel{background:#0f172a;border:1px solid #243041;border-radius:20px;padding:16px;margin-bottom:20px}
+.grid{display:grid;grid-template-columns:300px 1fr 350px;gap:20px}
+button,input,select,textarea{font:inherit;padding:8px;border-radius:10px;border:1px solid #243041;background:#0b1220;color:#e5eefb}
+button{cursor:pointer}
+.mapgrid{display:grid;gap:2px;margin:auto;width:max-content}
+.tile{width:30px;height:30px;border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:12px}
+@media(max-width:1000px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="panel">
+<h1>NeonGrid Forge</h1>
+<p>Cyberpunk / Shadowrun / Sci‑Fi Map Generator</p>
+</div>
+
+<div class="grid">
+
+<div class="panel">
+<h2>Generator</h2>
+<label>Name</label>
+<input id="mapName" value="Neon Extraction Zone">
+<label>Theme</label>
+<select id="theme">
+<option>Cyberpunk</option>
+<option>Shadowrun</option>
+<option>SciFi</option>
+</select>
+<label>Rows</label>
+<input id="rows" type="number" value="14">
+<label>Cols</label>
+<input id="cols" type="number" value="18">
+<button onclick="generate()">Generate</button>
+<button onclick="clearMap()">Clear</button>
+</div>
+
+<div class="panel">
+<h2 id="mapTitle">Neon Extraction Zone</h2>
+<div id="mapGrid" class="mapgrid"></div>
+</div>
+
+<div class="panel">
+<h2>Tools</h2>
+<textarea id="jsonArea"></textarea>
+<button onclick="exportJSON()">JSON Export</button>
+<button onclick="importJSON()">JSON Import</button>
+<button onclick="exportPNG()">PNG Export</button>
+</div>
+
+</div>
+</div>
+
+<canvas id="canvas" style="display:none"></canvas>
+
+<script>
+const TILESET={
+empty:{symbol:"",color:"#0f172a"},
+wall:{symbol:"█",color:"#cbd5e1"},
+neon:{symbol:"✦",color:"#d946ef"},
+terminal:{symbol:"⌘",color:"#10b981"},
+road:{symbol:"═",color:"#334155"}
+}
+
+let grid=[]
+let selected="wall"
+
+function makeGrid(r,c){
+return Array.from({length:r},()=>Array.from({length:c},()=>"empty"))
+}
+
+function generate(){
+let r=Number(rows.value)
+let c=Number(cols.value)
+grid=makeGrid(r,c)
+for(let i=0;i<10;i++){
+grid[Math.floor(Math.random()*r)][Math.floor(Math.random()*c)]="neon"
+}
+render()
+}
+
+function clearMap(){
+grid=makeGrid(Number(rows.value),Number(cols.value))
+render()
+}
+
+function render(){
+mapTitle.innerText=mapName.value
+mapGrid.style.gridTemplateColumns=`repeat(${grid[0].length},30px)`
+mapGrid.innerHTML=""
+grid.forEach((row,ri)=>row.forEach((t,ci)=>{
+let d=TILESET[t]
+let el=document.createElement("div")
+el.className="tile"
+el.style.background=d.color
+el.innerText=d.symbol
+el.onclick=()=>{grid[ri][ci]=selected;render()}
+mapGrid.appendChild(el)
+}))
+}
+
+function exportJSON(){
+jsonArea.value=JSON.stringify({name:mapName.value,grid},null,2)
+}
+
+function importJSON(){
+try{
+let d=JSON.parse(jsonArea.value)
+mapName.value=d.name
+grid=d.grid
+render()
+}catch{alert("Import error")}
+}
+
+function exportPNG(){
+let canvas=document.getElementById("canvas")
+let ctx=canvas.getContext("2d")
+let size=40
+canvas.width=grid[0].length*size
+canvas.height=grid.length*size
+grid.forEach((row,r)=>row.forEach((t,c)=>{
+ctx.fillStyle=TILESET[t].color
+ctx.fillRect(c*size,r*size,size-2,size-2)
+}))
+let a=document.createElement("a")
+a.href=canvas.toDataURL()
+a.download="map.png"
+a.click()
+}
+
+generate()
+</script>
+</body>
+</html>
