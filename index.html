@@ -57,6 +57,8 @@
     .mapwrap{overflow:auto;border-radius:18px;border:1px solid var(--border);background:radial-gradient(circle at top, rgba(34,211,238,.08), transparent 20%), linear-gradient(180deg,#111827,#020617);padding:16px}
     .mapgrid{display:grid;gap:2px;width:max-content;margin:0 auto}
     .tile{width:36px;height:36px;border:1px solid rgba(255,255,255,.06);border-radius:4px;display:flex;align-items:center;justify-content:center;color:rgba(248,250,252,.9);font-size:12px;cursor:pointer;user-select:none;position:relative;overflow:hidden;background-size:cover;background-position:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.03)}
+    .tile.glow{animation:tilePulse 2.1s ease-in-out infinite}
+    @keyframes tilePulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.18)}}
     .tile::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg, rgba(255,255,255,.08), transparent 35%, rgba(0,0,0,.18));mix-blend-mode:screen;opacity:.35}
     .tile .sym{position:relative;z-index:2;text-shadow:0 0 10px rgba(0,0,0,.55)}
     .tools-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
@@ -135,7 +137,7 @@
           <div class="stat"><div class="small">Neon</div><div id="statNeon" class="n">0</div></div>
           <div class="stat"><div class="small">Terminals</div><div id="statTerminal" class="n">0</div></div>
         </div>
-        <div class="legend">Die Maps nutzen jetzt strukturierte Kacheln statt flacher Farbblöcke: Asphalt, Innenräume, Glas, Wände und Neon wirken dadurch plastischer.</div>
+        <div class="legend">Die Maps nutzen jetzt strukturierte Kacheln statt flacher Farbblöcke: Asphalt, Gehwege, Gitter, Kisten, Sicherheitskameras, Medbay- und Bar-Elemente wirken deutlich plastischer.</div>
       </aside>
 
       <main class="panel">
@@ -201,6 +203,15 @@
       drone:   { label: "Drohne", symbol: "◉", hex: "#0ea5e9", texture: "radial-gradient(circle at center, rgba(255,255,255,.8), rgba(14,165,233,.9) 50%, rgba(2,132,199,.95))" },
       vehicle: { label: "Fahrzeug", symbol: "▰", hex: "#ef4444", texture: "linear-gradient(180deg,#ef4444,#7f1d1d), repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 2px, transparent 2px 10px)" },
       spawn:   { label: "Spawn", symbol: "⬢", hex: "#84cc16", texture: "radial-gradient(circle at center, rgba(255,255,255,.82), rgba(132,204,22,.82) 45%, rgba(63,98,18,.95))" },
+      sidewalk:{ label: "Gehweg", symbol: "", hex: "#8b95a7", texture: "linear-gradient(180deg,#a3adbe,#6f7b8f), repeating-linear-gradient(90deg, rgba(255,255,255,.08) 0 1px, transparent 1px 18px), repeating-linear-gradient(0deg, rgba(0,0,0,.08) 0 1px, transparent 1px 18px)" },
+      grate:   { label: "Gitter", symbol: "#", hex: "#475569", texture: "repeating-linear-gradient(90deg,#64748b 0 2px,#334155 2px 5px), repeating-linear-gradient(0deg,rgba(255,255,255,.06) 0 1px, transparent 1px 6px)" },
+      crate:   { label: "Kiste", symbol: "▥", hex: "#8b5a2b", texture: "linear-gradient(180deg,#a16207,#6b3f16), repeating-linear-gradient(90deg, rgba(255,255,255,.08) 0 1px, transparent 1px 10px)" },
+      camera:  { label: "Kamera", symbol: "◔", hex: "#94a3b8", texture: "radial-gradient(circle at 40% 40%, rgba(255,255,255,.9), rgba(148,163,184,.75) 45%, rgba(51,65,85,.95))" },
+      vending: { label: "Vending", symbol: "▨", hex: "#ec4899", texture: "linear-gradient(180deg,#f472b6,#831843), repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 2px, transparent 2px 8px)" },
+      turret:  { label: "Turret", symbol: "✹", hex: "#f43f5e", texture: "radial-gradient(circle at center, rgba(255,255,255,.75), rgba(244,63,94,.85) 45%, rgba(76,5,25,.95))" },
+      ritual:  { label: "Ritual", symbol: "✧", hex: "#a855f7", texture: "radial-gradient(circle at center, rgba(255,255,255,.55), rgba(168,85,247,.7) 35%, rgba(59,7,100,.95))" },
+      medbay:  { label: "Medbay", symbol: "+", hex: "#06b6d4", texture: "linear-gradient(180deg,#67e8f9,#0e7490), repeating-linear-gradient(90deg, rgba(255,255,255,.08) 0 1px, transparent 1px 12px)" },
+      bar:     { label: "Theke", symbol: "≋", hex: "#b45309", texture: "linear-gradient(180deg,#d97706,#78350f), repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 1px, transparent 1px 10px)" }
     };
 
     const state = { selectedTile: 'wall', grid: [] };
@@ -232,22 +243,50 @@
         const roadRow = Math.floor(rows / 2);
         for (let c = 0; c < cols; c++) grid[roadRow][c] = 'road';
         if (rows > 10) for (let c = 0; c < cols; c++) grid[Math.max(roadRow-1,0)][c] = 'road';
+        for (let c = 0; c < cols; c++) {
+          if (c % 4 !== 0) {
+            if (roadRow + 1 < rows) grid[roadRow + 1][c] = 'sidewalk';
+            if (roadRow - 2 >= 0) grid[roadRow - 2][c] = 'sidewalk';
+          }
+        }
       }
       for (let i = 0; i < Math.max(6, Math.floor(cols / 2)); i++) {
         const r = rnd(1, rows - 2);
         const c = rnd(1, cols - 2);
-        grid[r][c] = ['neon', 'terminal', 'cover', 'vehicle', 'spawn'][rnd(0, 4)];
+        grid[r][c] = ['neon', 'terminal', 'cover', 'vehicle', 'spawn', 'crate', 'camera'][rnd(0, 6)];
+      }
+      for (let i = 0; i < Math.max(3, Math.floor(cols / 5)); i++) {
+        const r = rnd(1, rows - 2);
+        const c = rnd(1, cols - 2);
+        if (grid[r][c] === 'alley') grid[r][c] = 'grate';
       }
       if (scenario === 'corp-lab') {
         addRect(grid, 2, 2, rows - 3, cols - 3, 'room', 'wall');
         addRect(grid, 4, 4, rows - 5, Math.floor(cols/2), 'glass', 'wall');
+        addRect(grid, 4, Math.floor(cols/2)+1, rows - 5, cols - 5, 'room', 'wall');
         grid[Math.floor(rows/2)][Math.floor(cols/2)] = 'door';
         grid[4][cols-5] = 'terminal';
         grid[rows-5][cols-5] = 'hazard';
+        grid[rows-6][5] = 'medbay';
+        grid[5][5] = 'camera';
       }
       if (scenario === 'checkpoint') {
         for (let r = 2; r < rows-2; r += 3) grid[r][Math.floor(cols/2)] = 'cover';
         grid[Math.floor(rows/2)][Math.floor(cols/2)+1] = 'terminal';
+        grid[Math.floor(rows/2)-1][Math.floor(cols/2)-2] = 'camera';
+        grid[Math.floor(rows/2)+2][Math.floor(cols/2)+2] = 'turret';
+      }
+      if (scenario === 'night-market') {
+        for (let c = 2; c < cols-2; c += 4) {
+          grid[2][c] = 'vending';
+          if (3 < rows) grid[3][c] = 'crate';
+        }
+      }
+      if (scenario === 'garage') {
+        grid[Math.floor(rows/2)][Math.floor(cols/2)-2] = 'vehicle';
+        grid[Math.floor(rows/2)][Math.floor(cols/2)+2] = 'vehicle';
+        grid[3][3] = 'crate';
+        grid[3][cols-4] = 'terminal';
       }
       return grid;
     }
@@ -262,12 +301,15 @@
 
       if (template === 'bar') {
         addRect(grid, 2, 2, rows - 3, cols - 3, 'room', 'wall');
-        addRect(grid, midR - 1, 3, midR + 1, cols - 4, 'cover');
+        addRect(grid, midR - 1, 3, midR + 1, cols - 4, 'bar');
         grid[rows - 3][midC] = 'door';
         grid[4][4] = 'terminal';
         grid[3][cols - 5] = 'neon';
         grid[midR + 3][5] = 'spawn';
         grid[midR + 3][cols - 6] = 'spawn';
+        grid[4][6] = 'vending';
+        grid[midR + 2][midC - 4] = 'crate';
+        grid[midR + 2][midC + 4] = 'crate';
       }
       if (template === 'lab') {
         addRect(grid, 1, 1, rows - 2, cols - 2, 'room', 'wall');
@@ -279,6 +321,8 @@
         grid[midR][cols - 6] = 'hazard';
         grid[midR - 2][cols - 7] = 'drone';
         grid[rows - 3][midC] = 'spawn';
+        grid[rows - 5][5] = 'medbay';
+        grid[4][cols - 6] = 'camera';
       }
       if (template === 'server') {
         addRect(grid, 2, 2, rows - 3, cols - 3, 'room', 'wall');
@@ -292,6 +336,8 @@
         grid[midR][4] = 'cover';
         grid[midR][cols - 5] = 'cover';
         grid[rows - 5][midC - 4] = 'spawn';
+        grid[4][4] = 'camera';
+        grid[4][cols - 5] = 'turret';
       }
       if (template === 'garage') {
         addRect(grid, 2, 2, rows - 3, cols - 3, 'room', 'wall');
@@ -303,6 +349,8 @@
         grid[4][cols - 5] = 'neon';
         grid[midR + 2][5] = 'cover';
         grid[midR + 2][cols - 6] = 'spawn';
+        grid[midR - 2][midC] = 'crate';
+        grid[3][3] = 'grate';
       }
       state.grid = grid;
       render();
@@ -336,7 +384,10 @@
         const cell = document.createElement('button');
         cell.className = 'tile';
         cell.style.background = data.texture;
-        if (['neon','terminal','drone','spawn'].includes(tile)) cell.style.boxShadow = `0 0 10px ${data.hex}, inset 0 0 0 1px rgba(255,255,255,.08)`;
+        if (['neon','terminal','drone','spawn','ritual','turret'].includes(tile)) {
+          cell.style.boxShadow = `0 0 10px ${data.hex}, inset 0 0 0 1px rgba(255,255,255,.08)`;
+          cell.classList.add('glow');
+        }
         if (tile === 'glass') cell.style.opacity = '.92';
         const sym = document.createElement('span');
         sym.className = 'sym';
