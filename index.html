@@ -1,143 +1,473 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NeonGrid Forge</title>
-<style>
-body{margin:0;font-family:Arial;background:#020617;color:#e5eefb}
-.wrap{max-width:1400px;margin:auto;padding:20px}
-h1{margin:0 0 10px}
-.panel{background:#0f172a;border:1px solid #243041;border-radius:20px;padding:16px;margin-bottom:20px}
-.grid{display:grid;grid-template-columns:300px 1fr 350px;gap:20px}
-button,input,select,textarea{font:inherit;padding:8px;border-radius:10px;border:1px solid #243041;background:#0b1220;color:#e5eefb}
-button{cursor:pointer}
-.mapgrid{display:grid;gap:2px;margin:auto;width:max-content}
-.tile{width:30px;height:30px;border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:12px}
-@media(max-width:1000px){.grid{grid-template-columns:1fr}}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NeonGrid Forge – index.html</title>
+  <style>
+    :root{
+      --bg:#020617;
+      --panel:#0f172a;
+      --panel2:#111827;
+      --border:#243041;
+      --text:#e5eefb;
+      --muted:#93a4bc;
+      --accent:#d946ef;
+      --accent2:#22d3ee;
+      --accent3:#10b981;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Arial,Helvetica,sans-serif;
+      color:var(--text);
+      background:radial-gradient(circle at top, rgba(217,70,239,.12), transparent 25%), linear-gradient(180deg,#020617,#0b1220 55%, #020617);
+    }
+    .wrap{max-width:1500px;margin:0 auto;padding:20px}
+    .hero,.panel{
+      background:rgba(15,23,42,.9);
+      border:1px solid var(--border);
+      border-radius:24px;
+      box-shadow:0 18px 50px rgba(0,0,0,.28);
+    }
+    .hero{padding:24px;margin-bottom:20px;position:relative;overflow:hidden}
+    .hero::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(217,70,239,.18),rgba(34,211,238,.12),rgba(16,185,129,.12));pointer-events:none}
+    .hero>*{position:relative}
+    .badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+    .badge{padding:6px 10px;border-radius:999px;border:1px solid var(--border);background:#111827;color:#dbe9ff;font-size:12px}
+    h1{margin:0 0 8px;font-size:40px}
+    p{margin:0;color:var(--muted)}
+    .grid{display:grid;grid-template-columns:320px minmax(0,1fr) 360px;gap:20px}
+    .panel{padding:16px}
+    .panel h2{margin:0 0 14px;font-size:20px}
+    .field{margin-bottom:12px}
+    .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+    input,select,textarea,button{font:inherit}
+    input,select,textarea{width:100%;padding:10px 12px;border-radius:14px;border:1px solid var(--border);background:#0b1220;color:var(--text)}
+    textarea{min-height:180px;resize:vertical}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    button{border:1px solid var(--border);background:#111827;color:var(--text);padding:10px 12px;border-radius:14px;cursor:pointer;transition:.18s transform,.18s border-color,.18s background}
+    button:hover{transform:translateY(-1px);border-color:#44556f}
+    button.primary{background:linear-gradient(90deg,var(--accent),#8b5cf6);border:none}
+    button.secondary{background:#172234}
+    .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+    .stat{padding:12px;border-radius:18px;border:1px solid var(--border);background:#0b1220}
+    .stat .n{font-size:24px;font-weight:bold;margin-top:6px}
+    .mapwrap{overflow:auto;border-radius:18px;border:1px solid var(--border);background:radial-gradient(circle at top, rgba(34,211,238,.08), transparent 20%), linear-gradient(180deg,#111827,#020617);padding:16px}
+    .mapgrid{display:grid;gap:2px;width:max-content;margin:0 auto}
+    .tile{width:36px;height:36px;border:1px solid rgba(255,255,255,.06);border-radius:4px;display:flex;align-items:center;justify-content:center;color:rgba(248,250,252,.9);font-size:12px;cursor:pointer;user-select:none;position:relative;overflow:hidden;background-size:cover;background-position:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.03)}
+    .tile::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg, rgba(255,255,255,.08), transparent 35%, rgba(0,0,0,.18));mix-blend-mode:screen;opacity:.35}
+    .tile .sym{position:relative;z-index:2;text-shadow:0 0 10px rgba(0,0,0,.55)}
+    .tools-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+    .tabbtn.active{outline:2px solid rgba(34,211,238,.5)}
+    .tab{display:none}
+    .tab.active{display:block}
+    .tile-list{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:420px;overflow:auto}
+    .tilepick{display:flex;align-items:center;gap:8px;justify-content:flex-start}
+    .swatch{width:24px;height:24px;border-radius:8px;border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center}
+    .small{font-size:12px;color:var(--muted)}
+    .legend{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.4}
+    @media (max-width: 1100px){.grid{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
-<div class="wrap">
-<div class="panel">
-<h1>NeonGrid Forge</h1>
-<p>Cyberpunk / Shadowrun / Sci‑Fi Map Generator</p>
-</div>
+  <div class="wrap">
+    <section class="hero">
+      <div class="badges">
+        <span class="badge">Cyberpunk</span>
+        <span class="badge">Shadowrun</span>
+        <span class="badge">Sci‑Fi</span>
+        <span class="badge">GitHub-Ready index.html</span>
+      </div>
+      <h1>NeonGrid Forge</h1>
+      <p>Realistischer wirkende HTML/JS-Website für Cyberpunk-, Shadowrun- und Sci‑Fi-Maps mit Generator, Gebäudevorlagen, PNG-Export und JSON-Speichern.</p>
+    </section>
 
-<div class="grid">
+    <section class="grid">
+      <aside class="panel">
+        <h2>Generator</h2>
+        <div class="field">
+          <label for="mapName">Map-Name</label>
+          <input id="mapName" value="Neon Extraction Zone" />
+        </div>
+        <div class="field">
+          <label for="theme">Theme</label>
+          <select id="theme">
+            <option value="cyberpunk">Cyberpunk</option>
+            <option value="shadowrun">Shadowrun</option>
+            <option value="scifi">Sci‑Fi</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="scenario">Szenario</label>
+          <select id="scenario">
+            <option value="night-market">Night Market</option>
+            <option value="corp-lab">Konzernlabor</option>
+            <option value="checkpoint">Checkpoint</option>
+            <option value="garage">Neon Garage</option>
+          </select>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="rows">Zeilen</label>
+            <input id="rows" type="number" min="8" max="40" value="14" />
+          </div>
+          <div class="field">
+            <label for="cols">Spalten</label>
+            <input id="cols" type="number" min="8" max="40" value="18" />
+          </div>
+        </div>
+        <div class="btns">
+          <button class="primary" id="generateBtn">Generieren</button>
+          <button class="secondary" id="clearBtn">Leeren</button>
+        </div>
+        <div class="field" style="margin-top:14px">
+          <label>Gebäude-Generator</label>
+          <div class="btns">
+            <button class="secondary building" data-building="bar">Cyber Bar</button>
+            <button class="secondary building" data-building="lab">Megacorp-Labor</button>
+            <button class="secondary building" data-building="server">Serverraum</button>
+            <button class="secondary building" data-building="garage">Werkstatt</button>
+          </div>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="small">Neon</div><div id="statNeon" class="n">0</div></div>
+          <div class="stat"><div class="small">Terminals</div><div id="statTerminal" class="n">0</div></div>
+        </div>
+        <div class="legend">Die Maps nutzen jetzt strukturierte Kacheln statt flacher Farbblöcke: Asphalt, Innenräume, Glas, Wände und Neon wirken dadurch plastischer.</div>
+      </aside>
 
-<div class="panel">
-<h2>Generator</h2>
-<label>Name</label>
-<input id="mapName" value="Neon Extraction Zone">
-<label>Theme</label>
-<select id="theme">
-<option>Cyberpunk</option>
-<option>Shadowrun</option>
-<option>SciFi</option>
-</select>
-<label>Rows</label>
-<input id="rows" type="number" value="14">
-<label>Cols</label>
-<input id="cols" type="number" value="18">
-<button onclick="generate()">Generate</button>
-<button onclick="clearMap()">Clear</button>
-</div>
+      <main class="panel">
+        <h2 id="mapTitle">Neon Extraction Zone</h2>
+        <div class="mapwrap">
+          <div id="mapGrid" class="mapgrid"></div>
+        </div>
+      </main>
 
-<div class="panel">
-<h2 id="mapTitle">Neon Extraction Zone</h2>
-<div id="mapGrid" class="mapgrid"></div>
-</div>
+      <aside class="panel">
+        <h2>Werkzeuge & Export</h2>
+        <div class="tools-tabs">
+          <button class="tabbtn active" data-tab="tiles">Tiles</button>
+          <button class="tabbtn" data-tab="notes">Notizen</button>
+          <button class="tabbtn" data-tab="json">JSON</button>
+          <button class="tabbtn" data-tab="foundry">Foundry</button>
+        </div>
 
-<div class="panel">
-<h2>Tools</h2>
-<textarea id="jsonArea"></textarea>
-<button onclick="exportJSON()">JSON Export</button>
-<button onclick="importJSON()">JSON Import</button>
-<button onclick="exportPNG()">PNG Export</button>
-</div>
+        <div id="tab-tiles" class="tab active">
+          <div id="tileList" class="tile-list"></div>
+        </div>
 
-</div>
-</div>
+        <div id="tab-notes" class="tab">
+          <div class="field">
+            <label for="notes">Notizen</label>
+            <textarea id="notes">Hook: Datendiebstahl im Nachtmarkt</textarea>
+          </div>
+          <button class="primary" id="pngBtn">PNG Export</button>
+        </div>
 
-<canvas id="canvas" style="display:none"></canvas>
+        <div id="tab-json" class="tab">
+          <div class="btns" style="margin-bottom:10px">
+            <button id="jsonExportBtn">JSON Export</button>
+            <button id="jsonImportBtn">JSON Import</button>
+          </div>
+          <button class="secondary" id="jsonClearBtn" style="width:100%;margin-bottom:10px">Feld leeren</button>
+          <textarea id="jsonArea"></textarea>
+        </div>
 
-<script>
-const TILESET={
-empty:{symbol:"",color:"#0f172a"},
-wall:{symbol:"█",color:"#cbd5e1"},
-neon:{symbol:"✦",color:"#d946ef"},
-terminal:{symbol:"⌘",color:"#10b981"},
-road:{symbol:"═",color:"#334155"}
-}
+        <div id="tab-foundry" class="tab">
+          <button id="foundryExportBtn" style="margin-bottom:10px;width:100%">Foundry Scene JSON</button>
+          <textarea id="foundryArea"></textarea>
+        </div>
+      </aside>
+    </section>
+  </div>
 
-let grid=[]
-let selected="wall"
+  <canvas id="exportCanvas" style="display:none"></canvas>
 
-function makeGrid(r,c){
-return Array.from({length:r},()=>Array.from({length:c},()=>"empty"))
-}
+  <script>
+    const TILESET = {
+      empty:   { label: "Leer", symbol: "",  hex: "#0f172a", texture: "linear-gradient(180deg,#0b1322,#0f172a)" },
+      alley:   { label: "Gasse", symbol: "·", hex: "#27272a", texture: "linear-gradient(180deg,#2f3137,#1f2127), repeating-linear-gradient(90deg, rgba(255,255,255,.02) 0 3px, rgba(0,0,0,.02) 3px 6px)" },
+      road:    { label: "Straße", symbol: "═", hex: "#334155", texture: "linear-gradient(180deg,#3f4b5e,#253041), repeating-linear-gradient(90deg, rgba(255,255,255,.025) 0 2px, transparent 2px 8px)" },
+      wall:    { label: "Wand", symbol: "█", hex: "#cbd5e1", texture: "linear-gradient(180deg,#d7dee8,#94a3b8), repeating-linear-gradient(90deg, rgba(255,255,255,.22) 0 1px, rgba(0,0,0,.08) 1px 6px)" },
+      room:    { label: "Innenraum", symbol: "░", hex: "#64748b", texture: "linear-gradient(180deg,#73859e,#4e5b70), repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 1px, transparent 1px 12px), repeating-linear-gradient(0deg, rgba(255,255,255,.03) 0 1px, transparent 1px 12px)" },
+      glass:   { label: "Glas", symbol: "▦", hex: "#22d3ee", texture: "linear-gradient(135deg, rgba(34,211,238,.75), rgba(255,255,255,.15), rgba(34,211,238,.35))" },
+      neon:    { label: "Neon", symbol: "✦", hex: "#d946ef", texture: "radial-gradient(circle at center, rgba(255,255,255,.85), rgba(217,70,239,.85) 45%, rgba(78,10,108,.95))" },
+      terminal:{ label: "Terminal", symbol: "⌘", hex: "#10b981", texture: "linear-gradient(180deg,#29d39b,#0b8f67), repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 1px, transparent 1px 4px)" },
+      hazard:  { label: "Gefahr", symbol: "⚠", hex: "#f59e0b", texture: "repeating-linear-gradient(135deg,#f59e0b 0 8px,#6b3f00 8px 16px)" },
+      door:    { label: "Tür", symbol: "▣", hex: "#f97316", texture: "linear-gradient(180deg,#fb923c,#9a3412), repeating-linear-gradient(90deg, rgba(255,255,255,.08) 0 1px, transparent 1px 8px)" },
+      cover:   { label: "Deckung", symbol: "▤", hex: "#6d28d9", texture: "linear-gradient(180deg,#7c3aed,#3b0764), repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 2px, transparent 2px 6px)" },
+      drone:   { label: "Drohne", symbol: "◉", hex: "#0ea5e9", texture: "radial-gradient(circle at center, rgba(255,255,255,.8), rgba(14,165,233,.9) 50%, rgba(2,132,199,.95))" },
+      vehicle: { label: "Fahrzeug", symbol: "▰", hex: "#ef4444", texture: "linear-gradient(180deg,#ef4444,#7f1d1d), repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 2px, transparent 2px 10px)" },
+      spawn:   { label: "Spawn", symbol: "⬢", hex: "#84cc16", texture: "radial-gradient(circle at center, rgba(255,255,255,.82), rgba(132,204,22,.82) 45%, rgba(63,98,18,.95))" },
+    };
 
-function generate(){
-let r=Number(rows.value)
-let c=Number(cols.value)
-grid=makeGrid(r,c)
-for(let i=0;i<10;i++){
-grid[Math.floor(Math.random()*r)][Math.floor(Math.random()*c)]="neon"
-}
-render()
-}
+    const state = { selectedTile: 'wall', grid: [] };
+    const el = (id) => document.getElementById(id);
+    const mapNameEl = el('mapName');
+    const themeEl = el('theme');
+    const scenarioEl = el('scenario');
+    const rowsEl = el('rows');
+    const colsEl = el('cols');
+    const notesEl = el('notes');
+    const mapGridEl = el('mapGrid');
+    const mapTitleEl = el('mapTitle');
+    const jsonAreaEl = el('jsonArea');
+    const foundryAreaEl = el('foundryArea');
 
-function clearMap(){
-grid=makeGrid(Number(rows.value),Number(cols.value))
-render()
-}
+    function makeGrid(rows, cols, fill = 'empty') { return Array.from({length: rows}, () => Array.from({length: cols}, () => fill)); }
+    function cloneGrid(grid){ return grid.map(r => [...r]); }
+    function rnd(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+    function addRect(grid, r1, c1, r2, c2, fill, border = null) {
+      for (let r = r1; r <= r2; r++) for (let c = c1; c <= c2; c++) {
+        const isBorder = r === r1 || r === r2 || c === c1 || c === c2;
+        grid[r][c] = isBorder && border ? border : fill;
+      }
+    }
 
-function render(){
-mapTitle.innerText=mapName.value
-mapGrid.style.gridTemplateColumns=`repeat(${grid[0].length},30px)`
-mapGrid.innerHTML=""
-grid.forEach((row,ri)=>row.forEach((t,ci)=>{
-let d=TILESET[t]
-let el=document.createElement("div")
-el.className="tile"
-el.style.background=d.color
-el.innerText=d.symbol
-el.onclick=()=>{grid[ri][ci]=selected;render()}
-mapGrid.appendChild(el)
-}))
-}
+    function proceduralMap(rows, cols, scenario) {
+      const grid = makeGrid(rows, cols, scenario === 'corp-lab' ? 'room' : 'alley');
+      if (scenario !== 'corp-lab') {
+        const roadRow = Math.floor(rows / 2);
+        for (let c = 0; c < cols; c++) grid[roadRow][c] = 'road';
+        if (rows > 10) for (let c = 0; c < cols; c++) grid[Math.max(roadRow-1,0)][c] = 'road';
+      }
+      for (let i = 0; i < Math.max(6, Math.floor(cols / 2)); i++) {
+        const r = rnd(1, rows - 2);
+        const c = rnd(1, cols - 2);
+        grid[r][c] = ['neon', 'terminal', 'cover', 'vehicle', 'spawn'][rnd(0, 4)];
+      }
+      if (scenario === 'corp-lab') {
+        addRect(grid, 2, 2, rows - 3, cols - 3, 'room', 'wall');
+        addRect(grid, 4, 4, rows - 5, Math.floor(cols/2), 'glass', 'wall');
+        grid[Math.floor(rows/2)][Math.floor(cols/2)] = 'door';
+        grid[4][cols-5] = 'terminal';
+        grid[rows-5][cols-5] = 'hazard';
+      }
+      if (scenario === 'checkpoint') {
+        for (let r = 2; r < rows-2; r += 3) grid[r][Math.floor(cols/2)] = 'cover';
+        grid[Math.floor(rows/2)][Math.floor(cols/2)+1] = 'terminal';
+      }
+      return grid;
+    }
 
-function exportJSON(){
-jsonArea.value=JSON.stringify({name:mapName.value,grid},null,2)
-}
+    function applyBuildingTemplate(template) {
+      const rows = Number(rowsEl.value);
+      const cols = Number(colsEl.value);
+      const base = makeGrid(rows, cols, template === 'lab' || template === 'server' ? 'room' : 'alley');
+      const grid = cloneGrid(base);
+      const midR = Math.floor(rows / 2);
+      const midC = Math.floor(cols / 2);
 
-function importJSON(){
-try{
-let d=JSON.parse(jsonArea.value)
-mapName.value=d.name
-grid=d.grid
-render()
-}catch{alert("Import error")}
-}
+      if (template === 'bar') {
+        addRect(grid, 2, 2, rows - 3, cols - 3, 'room', 'wall');
+        addRect(grid, midR - 1, 3, midR + 1, cols - 4, 'cover');
+        grid[rows - 3][midC] = 'door';
+        grid[4][4] = 'terminal';
+        grid[3][cols - 5] = 'neon';
+        grid[midR + 3][5] = 'spawn';
+        grid[midR + 3][cols - 6] = 'spawn';
+      }
+      if (template === 'lab') {
+        addRect(grid, 1, 1, rows - 2, cols - 2, 'room', 'wall');
+        addRect(grid, 3, 3, rows - 4, Math.floor(cols / 2), 'glass', 'wall');
+        addRect(grid, 3, Math.floor(cols / 2) + 1, rows - 4, cols - 4, 'room', 'wall');
+        grid[midR][Math.floor(cols / 2)] = 'door';
+        grid[4][4] = 'terminal';
+        grid[rows - 5][cols - 5] = 'terminal';
+        grid[midR][cols - 6] = 'hazard';
+        grid[midR - 2][cols - 7] = 'drone';
+        grid[rows - 3][midC] = 'spawn';
+      }
+      if (template === 'server') {
+        addRect(grid, 2, 2, rows - 3, cols - 3, 'room', 'wall');
+        for (let r = 4; r < rows - 4; r += 2) {
+          grid[r][midC - 2] = 'terminal';
+          grid[r][midC] = 'terminal';
+          grid[r][midC + 2] = 'terminal';
+        }
+        grid[rows - 3][midC] = 'door';
+        grid[4][midC] = 'hazard';
+        grid[midR][4] = 'cover';
+        grid[midR][cols - 5] = 'cover';
+        grid[rows - 5][midC - 4] = 'spawn';
+      }
+      if (template === 'garage') {
+        addRect(grid, 2, 2, rows - 3, cols - 3, 'room', 'wall');
+        addRect(grid, 4, 4, rows - 5, cols - 5, 'alley');
+        grid[rows - 3][midC] = 'door';
+        grid[midR][midC - 3] = 'vehicle';
+        grid[midR][midC + 3] = 'vehicle';
+        grid[4][4] = 'terminal';
+        grid[4][cols - 5] = 'neon';
+        grid[midR + 2][5] = 'cover';
+        grid[midR + 2][cols - 6] = 'spawn';
+      }
+      state.grid = grid;
+      render();
+    }
 
-function exportPNG(){
-let canvas=document.getElementById("canvas")
-let ctx=canvas.getContext("2d")
-let size=40
-canvas.width=grid[0].length*size
-canvas.height=grid.length*size
-grid.forEach((row,r)=>row.forEach((t,c)=>{
-ctx.fillStyle=TILESET[t].color
-ctx.fillRect(c*size,r*size,size-2,size-2)
-}))
-let a=document.createElement("a")
-a.href=canvas.toDataURL()
-a.download="map.png"
-a.click()
-}
+    function getStats() {
+      const flat = state.grid.flat();
+      return { neon: flat.filter(t => t === 'neon').length, terminal: flat.filter(t => t === 'terminal').length };
+    }
 
-generate()
-</script>
+    function renderTilePicker() {
+      const list = el('tileList'); list.innerHTML = '';
+      Object.entries(TILESET).forEach(([key, data]) => {
+        const btn = document.createElement('button');
+        btn.className = 'tilepick' + (state.selectedTile === key ? ' active' : '');
+        btn.innerHTML = `<span class="swatch" style="background:${data.texture};color:#fff">${data.symbol || '□'}</span><span>${data.label}</span>`;
+        btn.onclick = () => { state.selectedTile = key; renderTilePicker(); };
+        list.appendChild(btn);
+      });
+    }
+
+    function render() {
+      const rows = state.grid.length;
+      const cols = state.grid[0]?.length || 0;
+      mapTitleEl.textContent = mapNameEl.value;
+      mapGridEl.style.gridTemplateColumns = `repeat(${cols}, 36px)`;
+      mapGridEl.innerHTML = '';
+
+      state.grid.forEach((row, r) => row.forEach((tile, c) => {
+        const data = TILESET[tile] || TILESET.empty;
+        const cell = document.createElement('button');
+        cell.className = 'tile';
+        cell.style.background = data.texture;
+        if (['neon','terminal','drone','spawn'].includes(tile)) cell.style.boxShadow = `0 0 10px ${data.hex}, inset 0 0 0 1px rgba(255,255,255,.08)`;
+        if (tile === 'glass') cell.style.opacity = '.92';
+        const sym = document.createElement('span');
+        sym.className = 'sym';
+        sym.textContent = data.symbol;
+        cell.appendChild(sym);
+        cell.title = data.label;
+        cell.onclick = () => { state.grid[r][c] = state.selectedTile; render(); };
+        mapGridEl.appendChild(cell);
+      }));
+
+      const stats = getStats();
+      el('statNeon').textContent = stats.neon;
+      el('statTerminal').textContent = stats.terminal;
+      renderTilePicker();
+    }
+
+    function exportMapData() {
+      return JSON.stringify({ name: mapNameEl.value, theme: themeEl.value, scenario: scenarioEl.value, rows: state.grid.length, cols: state.grid[0].length, notes: notesEl.value, grid: state.grid }, null, 2);
+    }
+
+    function exportFoundryScene() {
+      return JSON.stringify({ name: mapNameEl.value, width: state.grid[0].length * 100, height: state.grid.length * 100, grid: { type: 1, size: 100, distance: 1, units: 'm' }, flags: { neongrid: { theme: themeEl.value, scenario: scenarioEl.value } }, walls: [], lights: [], notes: [], tokens: [] }, null, 2);
+    }
+
+    function exportPNG() {
+      const canvas = el('exportCanvas');
+      const ctx = canvas.getContext('2d');
+      const rows = state.grid.length;
+      const cols = state.grid[0].length;
+      const size = 52;
+      const header = 84;
+      canvas.width = cols * size;
+      canvas.height = rows * size + header;
+
+      const bg = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      bg.addColorStop(0, '#020617');
+      bg.addColorStop(1, '#111827');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = 'rgba(217,70,239,.9)';
+      ctx.fillRect(0, 0, canvas.width, 6);
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = 'bold 24px Arial';
+      ctx.fillText(mapNameEl.value, 16, 32);
+      ctx.font = '14px Arial';
+      ctx.fillStyle = 'rgba(248,250,252,.7)';
+      ctx.fillText(`${themeEl.value} • ${scenarioEl.value}`, 16, 56);
+
+      state.grid.forEach((row, r) => row.forEach((tile, c) => {
+        const data = TILESET[tile] || TILESET.empty;
+        const x = c * size;
+        const y = r * size + header;
+
+        const grad = ctx.createLinearGradient(x, y, x + size, y + size);
+        if (tile === 'road') { grad.addColorStop(0, '#445166'); grad.addColorStop(1, '#253041'); }
+        else if (tile === 'alley') { grad.addColorStop(0, '#343840'); grad.addColorStop(1, '#1f2127'); }
+        else if (tile === 'wall') { grad.addColorStop(0, '#dde5ee'); grad.addColorStop(1, '#95a4b8'); }
+        else if (tile === 'room') { grad.addColorStop(0, '#73859e'); grad.addColorStop(1, '#4e5b70'); }
+        else if (tile === 'glass') { grad.addColorStop(0, 'rgba(255,255,255,.45)'); grad.addColorStop(1, '#22d3ee'); }
+        else { grad.addColorStop(0, data.hex); grad.addColorStop(1, '#111827'); }
+
+        ctx.fillStyle = grad;
+        ctx.fillRect(x + 1, y + 1, size - 2, size - 2);
+        ctx.strokeStyle = 'rgba(255,255,255,.08)';
+        ctx.strokeRect(x + 1, y + 1, size - 2, size - 2);
+
+        if (['neon','terminal','drone','spawn'].includes(tile)) {
+          ctx.shadowBlur = 16;
+          ctx.shadowColor = data.hex;
+          ctx.fillStyle = data.hex;
+          ctx.fillRect(x + 12, y + 12, size - 24, size - 24);
+          ctx.shadowBlur = 0;
+        }
+        if (tile === 'hazard') {
+          ctx.strokeStyle = 'rgba(0,0,0,.35)';
+          for (let i = 0; i < size; i += 10) {
+            ctx.beginPath();
+            ctx.moveTo(x + i, y + 1);
+            ctx.lineTo(x + 1, y + i);
+            ctx.stroke();
+          }
+        }
+        if (data.symbol) {
+          ctx.fillStyle = '#f8fafc';
+          ctx.font = '18px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(data.symbol, x + size / 2, y + size / 2 + 1);
+          ctx.textAlign = 'start';
+          ctx.textBaseline = 'alphabetic';
+        }
+      }));
+
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = mapNameEl.value.replace(/[^a-z0-9]/gi,'_') + '.png';
+      a.click();
+    }
+
+    document.querySelectorAll('.tabbtn').forEach(btn => btn.addEventListener('click', () => {
+      document.querySelectorAll('.tabbtn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      el('tab-' + btn.dataset.tab).classList.add('active');
+    }));
+
+    el('generateBtn').onclick = () => { state.grid = proceduralMap(Number(rowsEl.value), Number(colsEl.value), scenarioEl.value); render(); };
+    el('clearBtn').onclick = () => { state.grid = makeGrid(Number(rowsEl.value), Number(colsEl.value), 'empty'); render(); };
+    document.querySelectorAll('.building').forEach(btn => btn.onclick = () => applyBuildingTemplate(btn.dataset.building));
+    el('pngBtn').onclick = exportPNG;
+    el('jsonExportBtn').onclick = () => jsonAreaEl.value = exportMapData();
+    el('jsonImportBtn').onclick = () => {
+      try {
+        const parsed = JSON.parse(jsonAreaEl.value);
+        mapNameEl.value = parsed.name || mapNameEl.value;
+        themeEl.value = parsed.theme || themeEl.value;
+        scenarioEl.value = parsed.scenario || scenarioEl.value;
+        rowsEl.value = parsed.rows || rowsEl.value;
+        colsEl.value = parsed.cols || colsEl.value;
+        notesEl.value = parsed.notes || notesEl.value;
+        state.grid = parsed.grid;
+        render();
+      } catch { alert('Import Fehler'); }
+    };
+    el('jsonClearBtn').onclick = () => jsonAreaEl.value = '';
+    el('foundryExportBtn').onclick = () => foundryAreaEl.value = exportFoundryScene();
+    mapNameEl.oninput = () => mapTitleEl.textContent = mapNameEl.value;
+
+    state.grid = proceduralMap(Number(rowsEl.value), Number(colsEl.value), scenarioEl.value);
+    render();
+  </script>
 </body>
 </html>
